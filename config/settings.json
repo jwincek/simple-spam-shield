@@ -1,0 +1,17 @@
+{
+	"defaults": {
+		"enabled": true,
+		"protect_comments": true,
+		"protect_woo_reviews": true,
+		"protect_jetpack_forms": true,
+		"honeypot_enabled": true,
+		"time_gate_enabled": true,
+		"time_gate_seconds": 3,
+		"nonce_enabled": true,
+		"link_limit_enabled": true,
+		"link_limit_max": 3,
+		"keyword_block_enabled": true,
+		"blocked_keywords": "casino\npoker\nviagra\ncialis\ncrypto airdrop\nfree money\nclick here now",
+		"log_blocked": true
+	}
+}

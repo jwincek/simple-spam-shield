@@ -1,0 +1,19 @@
+/**
+ * Honeypot field — hidden from humans, visible to bots.
+ *
+ * Uses position + clip instead of display:none / visibility:hidden
+ * because some bots are trained to skip hidden fields.
+ */
+.sss-hp-wrap {
+	position: absolute;
+	left: -9999px;
+	top: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect( 0, 0, 0, 0 );
+	clip-path: inset( 50% );
+	opacity: 0;
+	pointer-events: none;
+	tab-index: -1;
+}

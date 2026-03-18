@@ -1,0 +1,37 @@
+{
+	"guards": {
+		"honeypot": {
+			"label": "Honeypot field",
+			"description": "Adds a hidden field that bots fill in but humans never see.",
+			"enabled_by_default": true,
+			"field_name": "sss_website_url",
+			"weight": 100
+		},
+		"time_gate": {
+			"label": "Minimum submission time",
+			"description": "Rejects submissions completed faster than a human could type.",
+			"enabled_by_default": true,
+			"min_seconds": 3,
+			"weight": 90
+		},
+		"nonce": {
+			"label": "Nonce verification",
+			"description": "Requires a valid WordPress nonce to prevent cross-site forgeries.",
+			"enabled_by_default": true,
+			"weight": 80
+		},
+		"link_limit": {
+			"label": "Link limit",
+			"description": "Flags submissions containing too many URLs.",
+			"enabled_by_default": true,
+			"max_links": 3,
+			"weight": 70
+		},
+		"keyword_block": {
+			"label": "Blocked keywords",
+			"description": "Rejects submissions containing known spam keywords or patterns.",
+			"enabled_by_default": true,
+			"weight": 60
+		}
+	}
+}
