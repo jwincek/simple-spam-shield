@@ -35,8 +35,7 @@ final class Assets {
 		);
 
 		wp_localize_script( 'sss-guard', 'sssGuard', [
-			'nonce'     => wp_create_nonce( \SSS\Guards\Nonce::ACTION ),
-			'timestamp' => time(),
+			'nonce' => wp_create_nonce( \SSS\Guards\Nonce::ACTION ),
 		] );
 	}
 }

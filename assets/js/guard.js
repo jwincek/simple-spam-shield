@@ -43,11 +43,12 @@
 		nonce.value = sssGuard.nonce;
 		form.appendChild( nonce );
 
-		// Timestamp field.
+		// Timestamp field — generated client-side so page caching
+		// cannot produce a stale value that breaks the time gate.
 		var ts = document.createElement( 'input' );
 		ts.type  = 'hidden';
 		ts.name  = 'sss_form_loaded';
-		ts.value = sssGuard.timestamp;
+		ts.value = Math.floor( Date.now() / 1000 );
 		form.appendChild( ts );
 	}
 

@@ -17,6 +17,13 @@ final class Nonce extends Abstract_Guard {
 	public function check( array $data, string $context ): \WP_Error|true {
 		$nonce = $data[ self::FIELD ] ?? '';
 
+		// Jetpack's form processor only forwards recognized form fields,
+		// so our injected nonce hidden input is not present in the data.
+		// Skip rather than hard-fail — other guards still protect.
+		if ( empty( $nonce ) && 'jetpack_form' === $context ) {
+			return true;
+		}
+
 		if ( ! wp_verify_nonce( $nonce, self::ACTION ) ) {
 			return $this->fail(
 				__( 'Security check failed — please refresh the page and try again.', 'simple-spam-shield' )
