@@ -12,6 +12,10 @@
 		"link_limit_max": 3,
 		"keyword_block_enabled": true,
 		"blocked_keywords": "casino\npoker\nviagra\ncialis\ncrypto airdrop\nfree money\nclick here now",
+		"duplicate_enabled": true,
+		"behavioral_enabled": false,
+		"behavioral_threshold": 0.6,
+		"allowlist": "",
 		"log_blocked": true
 	}
 }

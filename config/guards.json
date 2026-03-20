@@ -32,6 +32,20 @@
 			"description": "Rejects submissions containing known spam keywords or patterns.",
 			"enabled_by_default": true,
 			"weight": 60
+		},
+		"duplicate": {
+			"label": "Duplicate submission detection",
+			"description": "Rejects identical submissions sent within a short time window.",
+			"enabled_by_default": true,
+			"window_seconds": 60,
+			"weight": 95
+		},
+		"behavioral": {
+			"label": "Behavioral analysis",
+			"description": "Scores submissions based on mouse movements, clicks, and time on page to detect bot-like patterns.",
+			"enabled_by_default": false,
+			"threshold": 0.6,
+			"weight": 55
 		}
 	}
 }

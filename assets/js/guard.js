@@ -1,8 +1,11 @@
 /**
  * Simple Spam Shield — front-end guard script.
  *
- * Injects hidden honeypot, nonce, and timestamp fields into comment forms,
- * WooCommerce review forms, and Jetpack contact form blocks.
+ * Injects hidden honeypot, nonce, timestamp, and behavioral data fields
+ * into comment forms, WooCommerce review forms, and Jetpack contact form blocks.
+ *
+ * Behavioral tracking (mouse movements, clicks, time on page) ported from
+ * Comment & Form Guard's public-scripts.js, rewritten without jQuery.
  */
 ( function () {
 	'use strict';
@@ -17,6 +20,32 @@
 		'.wp-block-jetpack-contact-form form',  // Jetpack Contact Form blocks.
 		'.jetpack-contact-form form',           // Jetpack legacy class.
 	];
+
+	// --- Behavioral analysis tracking ---
+	// Ported from Comment & Form Guard.
+	var startTime = Date.now();
+	var mouseMovements = 0;
+	var clicks = 0;
+
+	document.addEventListener( 'mousemove', function () {
+		mouseMovements++;
+	} );
+
+	document.addEventListener( 'click', function () {
+		clicks++;
+	} );
+
+	/**
+	 * Build the behavioral data JSON string at submission time.
+	 */
+	function getBehavioralData() {
+		var timeSpent = ( Date.now() - startTime ) / 1000;
+		return JSON.stringify( {
+			time_spent: parseFloat( timeSpent.toFixed( 2 ) ),
+			mouse_movements: mouseMovements,
+			clicks: clicks
+		} );
+	}
 
 	/**
 	 * Inject hidden fields into a form.
@@ -50,6 +79,21 @@
 		ts.name  = 'sss_form_loaded';
 		ts.value = Math.floor( Date.now() / 1000 );
 		form.appendChild( ts );
+
+		// Behavioral data field — populated at submit time.
+		var bd = document.createElement( 'input' );
+		bd.type  = 'hidden';
+		bd.name  = 'sss_behavioral_data';
+		bd.value = '';
+		form.appendChild( bd );
+
+		// Capture behavioral data just before form submission.
+		form.addEventListener( 'submit', function () {
+			var field = form.querySelector( 'input[name="sss_behavioral_data"]' );
+			if ( field ) {
+				field.value = getBehavioralData();
+			}
+		} );
 	}
 
 	/**

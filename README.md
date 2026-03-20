@@ -4,20 +4,22 @@ Config-driven spam prevention for WordPress Comments, WooCommerce Product Review
 
 ## Architecture
 
-This plugin follows the **config-driven, layered architecture** pioneered by [vcpahumane-petstablished-sync](https://github.com/jwincek/vcpahumane-petstablished-sync), adapted for spam prevention:
+This plugin follows the **config-driven, layered architecture** pioneered by [vcpahumane-petstablished-sync](https://github.com/jwincek/vcpahumane-petstablished-sync), adapted for spam prevention and extended with features ported from [Comment & Form Guard](https://github.com/):
 
 ```
 config/                  → JSON definitions (guard rules, default settings)
-includes/core/           → Reusable infrastructure (Config loader, Guard Runner, Assets, Admin)
+includes/core/           → Infrastructure (Config loader, Guard Runner, Database Manager, Assets, Admin)
 includes/guards/         → Individual spam checks (analogous to "abilities")
 includes/integrations/   → Thin hooks into WP Comments, WooCommerce, Jetpack
+admin/                   → WP_List_Table for the spam logs admin page
 assets/css/              → Honeypot field styling
-assets/js/               → Front-end guard injection script
+assets/js/               → Front-end guard injection + behavioral tracking
+uninstall.php            → Clean deletion of all plugin data
 ```
 
-**Guards** are the equivalent of the reference plugin's **abilities** — thin, testable operations with clear inputs/outputs. Each guard implements `Guard_Interface` and is registered from `config/guards.json`. The `Guard_Runner` loads them, sorts by weight, and runs them as a pipeline.
+**Guards** are the equivalent of the reference plugin's **abilities** — thin, testable operations with clear inputs/outputs. Each guard implements `Guard_Interface` and is registered from `config/guards.json`. The `Guard_Runner` loads them, sorts by weight, and runs them as a pipeline. The first failure short-circuits and blocks the submission.
 
-**Integrations** are thin consumers that hook into WordPress, WooCommerce, and Jetpack lifecycle events and delegate all spam-checking to the shared guard pipeline.
+**Integrations** are thin consumers that hook into WordPress, WooCommerce, and Jetpack lifecycle events, normalize the incoming data into a common format, and delegate all spam-checking to the shared guard pipeline.
 
 ## Requirements
 
@@ -30,34 +32,71 @@ assets/js/               → Front-end guard injection script
 
 1. Download or clone into `wp-content/plugins/simple-spam-shield/`.
 2. Activate in **Plugins → Installed Plugins**.
-3. Configure at **Settings → Spam Shield**.
+3. Configure at **Spam Shield → Settings**.
+4. View blocked submissions at **Spam Shield → Spam Logs**.
 
 ## Spam Guards
 
-| Guard | Description |
-|---|---|
-| **Honeypot** | Hidden field that bots fill in but humans never see |
-| **Time gate** | Rejects submissions completed faster than a human could type |
-| **Nonce** | Validates a WordPress nonce to prevent cross-site forgeries |
-| **Link limit** | Flags submissions containing too many URLs |
-| **Keyword block** | Rejects submissions matching blocked keywords or phrases |
+| Guard | Weight | Default | Description |
+|---|---|---|---|
+| **Honeypot** | 100 | On | Hidden field that bots fill in but humans never see |
+| **Duplicate detection** | 95 | On | Rejects identical submissions within a 60-second window using transient-based hashing |
+| **Time gate** | 90 | On | Rejects submissions completed faster than a human could type (configurable, default 3s) |
+| **Nonce** | 80 | On | Validates a WordPress nonce to prevent cross-site forgeries |
+| **Link limit** | 70 | On | Flags submissions containing too many URLs (configurable, default 3) |
+| **Keyword block** | 60 | On | Rejects submissions matching blocked keywords or phrases |
+| **Behavioral analysis** | 55 | Off | Scores mouse movements, clicks, and time-on-page to detect bot-like interaction patterns |
 
-All guards are enabled by default and can be toggled individually from the admin settings page. Guard definitions (weights, defaults, field names) live in `config/guards.json`.
+Guards run in descending weight order. All can be toggled individually from the admin settings page. Definitions (weights, defaults, thresholds) live in `config/guards.json`.
 
 ## How It Works
 
-1. **Front-end injection**: `guard.js` automatically finds comment forms, WooCommerce review forms, and Jetpack contact form blocks on the page. It injects a hidden honeypot field, a nonce, and a timestamp into each form.
+### Front-end injection
 
-2. **Server-side pipeline**: When a form is submitted, the relevant integration class (Comments, WooCommerce, or Jetpack) normalizes the data and passes it to `Guard_Runner::run()`. The runner executes each enabled guard in weight order. The first failure short-circuits and blocks the submission.
+`guard.js` automatically finds comment forms, WooCommerce review forms, and Jetpack contact form blocks on the page via CSS selectors. It injects hidden fields for the honeypot, nonce, timestamp, and behavioral data into each form. A `MutationObserver` catches dynamically-loaded forms (e.g. AJAX-loaded WooCommerce reviews). The timestamp is generated client-side via `Date.now()` to avoid stale values from page caching. Behavioral data (mouse movement count, click count, time on page) is collected continuously and serialized into a JSON hidden field at submit time.
 
-3. **Logging**: Blocked submissions are optionally logged with timestamp, guard name, context, and IP — viewable on the settings page.
+### Server-side pipeline
 
-## Improvements Over the Reference Architecture
+When a form is submitted, the relevant integration class (Comments, WooCommerce, or Jetpack) normalizes the data and passes it to `Guard_Runner::run()`. The runner checks the allowlist first — if the submitter's IP or email matches, all guards are bypassed. Otherwise, each enabled guard runs in weight order until one fails or all pass.
 
-- **Guard pipeline pattern**: Where the reference plugin registers abilities individually, this plugin runs guards as an ordered pipeline with short-circuit logic and weighted priority.
-- **Normalized data layer**: Each integration normalizes its form data into a common format before passing to guards, so guards never need to know about WP comment arrays vs. Jetpack form arrays.
-- **Front-end auto-injection**: A single JS file protects all form types via CSS selectors and MutationObserver, including dynamically-loaded forms.
-- **Block log with admin UI**: A simple but effective log of blocked submissions, viewable directly on the settings page.
+### Two-phase Jetpack integration
+
+Jetpack contact forms require special handling because Jetpack's form processor strips unrecognized POST fields before our spam filter fires. The integration solves this with a two-phase pipeline:
+
+- **Phase 1** (`template_redirect`, priority 1) — Fires before Jetpack's `process_form_submission` (priority 10). At this point `$_POST` still contains our JS-injected fields. The integration runs the JS-dependent guards (honeypot, nonce, time gate, behavioral) against raw POST data. If any fail, a rejection flag is stored on the class — no `wp_die()`, no short-circuit.
+
+- **Phase 2** (`jetpack_contact_form_is_spam` filter) — Fires during Jetpack's own processing. If Phase 1 flagged the submission, this filter returns `true` immediately and Jetpack handles the rejection through its native UX. If Phase 1 passed, the content-based guards (keyword block, link limit, duplicate detection) run against Jetpack's structured `$form_data`. The JS-dependent guards skip automatically in Phase 2 via context-aware logic, avoiding duplicate checks.
+
+This design gives full guard coverage on Jetpack forms while Jetpack stays in complete control of the submission lifecycle and rejection UX.
+
+### Allowlist
+
+Submissions from allowlisted IPs or emails bypass all guards entirely. The allowlist supports exact IPs, CIDR ranges (e.g. `10.0.0.0/8`), exact email addresses, and email domain patterns (e.g. `@trusted.org`). IP detection is proxy-aware, checking `HTTP_CLIENT_IP` and `HTTP_X_FORWARDED_FOR` headers before falling back to `REMOTE_ADDR`.
+
+### Logging
+
+Blocked submissions are logged to a custom database table (`wp_sss_spam_logs`) with guard name, context, reason, content excerpt, IP, and user agent. The **Spam Shield → Spam Logs** admin page provides a paginated, sortable `WP_List_Table` with individual and bulk delete actions. Logging can be disabled from the settings page.
+
+### Clean uninstall
+
+When the plugin is deleted (not just deactivated), `uninstall.php` drops the custom database table, removes all `sss_*` options, and purges duplicate-detection transients.
+
+## Lineage
+
+The plugin's architecture draws from two sources:
+
+- **[vcpahumane-petstablished-sync](https://github.com/jwincek/vcpahumane-petstablished-sync)** — The config-driven, layered structure: `config/` JSON definitions, `includes/core/` infrastructure, namespaced autoloader, activation/deactivation hooks, and the guard-as-ability pattern.
+
+- **[Comment & Form Guard](https://github.com/)** — Five features were ported and adapted: duplicate submission detection (transient-based hashing), behavioral analysis (mouse/click/time scoring), the allowlist system (IP, CIDR, email, domain matching with proxy-aware IP detection), database-backed logging with `WP_List_Table`, and `uninstall.php` for clean plugin deletion.
+
+### Improvements over both
+
+- **Guard pipeline with weighted priority and short-circuit** — Guards run as an ordered pipeline rather than being registered individually or checked with sequential if/else blocks.
+- **Normalized data layer** — Each integration normalizes its form data into a common format so guards never need to know about WP comment arrays, WooCommerce review data, or Jetpack field structures.
+- **Two-phase Jetpack processing** — Solves the field-stripping problem without `wp_die()` or undocumented hooks, keeping Jetpack in control of the UX.
+- **Client-side timestamps** — Generated via `Date.now()` instead of server-side `time()`, eliminating false positives from page caching.
+- **No jQuery dependency** — The front-end script uses vanilla JS with `MutationObserver` for dynamic form detection.
+- **PHP 8.1+ with strict types** — Union return types, named enums, `str_starts_with`/`str_contains`, and `match` expressions throughout.
 
 ## Linting
 

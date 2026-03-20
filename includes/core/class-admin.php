@@ -1,6 +1,11 @@
 <?php
 /**
- * Admin settings — provides a WP admin page for configuring the plugin.
+ * Admin settings — provides WP admin pages for configuring the plugin
+ * and viewing spam logs.
+ *
+ * Now includes: allowlist field, behavioral analysis threshold, and
+ * a dedicated Spam Logs subpage using WP_List_Table backed by a
+ * custom database table (all ported from Comment & Form Guard).
  *
  * @package Simple_Spam_Shield
  */
@@ -15,63 +20,74 @@ final class Admin {
 	 * Register hooks.
 	 */
 	public static function init(): void {
-		add_action( 'admin_menu', [ __CLASS__, 'add_menu' ] );
+		add_action( 'admin_menu', [ __CLASS__, 'add_menus' ] );
 		add_action( 'admin_init', [ __CLASS__, 'register_settings' ] );
+		add_action( 'admin_init', [ Database_Manager::class, 'create_table' ] );
 	}
 
+	// ------------------------------------------------------------------
+	// Menu registration
+	// ------------------------------------------------------------------
+
 	/**
-	 * Add the settings page under the Settings menu.
+	 * Add a top-level menu with Settings and Spam Logs subpages.
+	 * Mirrors the Comment & Form Guard admin menu structure.
 	 */
-	public static function add_menu(): void {
-		add_options_page(
+	public static function add_menus(): void {
+		add_menu_page(
 			__( 'Spam Shield', 'simple-spam-shield' ),
 			__( 'Spam Shield', 'simple-spam-shield' ),
 			'manage_options',
 			'simple-spam-shield',
-			[ __CLASS__, 'render_page' ]
+			[ __CLASS__, 'render_settings_page' ],
+			'dashicons-shield',
+			80
+		);
+
+		add_submenu_page(
+			'simple-spam-shield',
+			__( 'Settings', 'simple-spam-shield' ),
+			__( 'Settings', 'simple-spam-shield' ),
+			'manage_options',
+			'simple-spam-shield',
+			[ __CLASS__, 'render_settings_page' ]
+		);
+
+		add_submenu_page(
+			'simple-spam-shield',
+			__( 'Spam Logs', 'simple-spam-shield' ),
+			__( 'Spam Logs', 'simple-spam-shield' ),
+			'manage_options',
+			'sss-spam-logs',
+			[ __CLASS__, 'render_logs_page' ]
 		);
 	}
 
-	/**
-	 * Register all settings.
-	 */
-	public static function register_settings(): void {
-		// General section.
-		add_settings_section(
-			'sss_general',
-			__( 'General', 'simple-spam-shield' ),
-			'__return_null',
-			'simple-spam-shield'
-		);
+	// ------------------------------------------------------------------
+	// Settings registration
+	// ------------------------------------------------------------------
 
+	public static function register_settings(): void {
+
+		// ---- General ----
+		add_settings_section( 'sss_general', __( 'General', 'simple-spam-shield' ), '__return_null', 'simple-spam-shield' );
 		self::add_toggle( 'sss_enabled', __( 'Enable spam protection', 'simple-spam-shield' ), 'sss_general', true );
 
-		// Protection targets section.
-		add_settings_section(
-			'sss_targets',
-			__( 'Protection targets', 'simple-spam-shield' ),
-			function () {
-				echo '<p>' . esc_html__( 'Choose which form types to protect.', 'simple-spam-shield' ) . '</p>';
-			},
-			'simple-spam-shield'
-		);
+		// ---- Protection targets ----
+		add_settings_section( 'sss_targets', __( 'Protection targets', 'simple-spam-shield' ), function () {
+			echo '<p>' . esc_html__( 'Choose which form types to protect.', 'simple-spam-shield' ) . '</p>';
+		}, 'simple-spam-shield' );
 
 		self::add_toggle( 'sss_protect_comments', __( 'WordPress comments', 'simple-spam-shield' ), 'sss_targets', true );
 		self::add_toggle( 'sss_protect_woo_reviews', __( 'WooCommerce product reviews', 'simple-spam-shield' ), 'sss_targets', true );
 		self::add_toggle( 'sss_protect_jetpack_forms', __( 'Jetpack contact form blocks', 'simple-spam-shield' ), 'sss_targets', true );
 
-		// Guards section.
-		add_settings_section(
-			'sss_guards',
-			__( 'Spam guards', 'simple-spam-shield' ),
-			function () {
-				echo '<p>' . esc_html__( 'Enable or disable individual spam checks.', 'simple-spam-shield' ) . '</p>';
-			},
-			'simple-spam-shield'
-		);
+		// ---- Guard toggles ----
+		add_settings_section( 'sss_guards', __( 'Spam guards', 'simple-spam-shield' ), function () {
+			echo '<p>' . esc_html__( 'Enable or disable individual spam checks.', 'simple-spam-shield' ) . '</p>';
+		}, 'simple-spam-shield' );
 
 		$guard_defs = Config::get( 'guards', 'guards', [] );
-
 		foreach ( $guard_defs as $slug => $def ) {
 			self::add_toggle(
 				"sss_{$slug}_enabled",
@@ -81,43 +97,33 @@ final class Admin {
 			);
 		}
 
-		// Time gate setting.
-		register_setting( 'simple-spam-shield', 'sss_time_gate_seconds', [
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'default'           => 3,
-		] );
+		// ---- Guard-specific settings ----
 
-		add_settings_field(
-			'sss_time_gate_seconds',
-			__( 'Minimum seconds before submit', 'simple-spam-shield' ),
-			function () {
-				$value = get_option( 'sss_time_gate_seconds', 3 );
-				printf(
-					'<input type="number" name="sss_time_gate_seconds" value="%d" min="1" max="30" class="small-text"> %s',
-					esc_attr( $value ),
-					esc_html__( 'seconds', 'simple-spam-shield' )
-				);
+		// Time gate seconds.
+		self::add_number( 'sss_time_gate_seconds', __( 'Minimum seconds before submit', 'simple-spam-shield' ), 'sss_guards', 3, 1, 30, __( 'seconds', 'simple-spam-shield' ) );
+
+		// Link limit.
+		self::add_number( 'sss_link_limit_max', __( 'Maximum links per submission', 'simple-spam-shield' ), 'sss_guards', 3, 0, 50 );
+
+		// Behavioral threshold.
+		register_setting( 'simple-spam-shield', 'sss_behavioral_threshold', [
+			'type'              => 'number',
+			'sanitize_callback' => function ( $v ) {
+				return max( 0.0, min( 1.0, (float) $v ) );
 			},
-			'simple-spam-shield',
-			'sss_guards'
-		);
-
-		// Link limit setting.
-		register_setting( 'simple-spam-shield', 'sss_link_limit_max', [
-			'type'              => 'integer',
-			'sanitize_callback' => 'absint',
-			'default'           => 3,
+			'default'           => 0.6,
 		] );
 
 		add_settings_field(
-			'sss_link_limit_max',
-			__( 'Maximum links per submission', 'simple-spam-shield' ),
+			'sss_behavioral_threshold',
+			__( 'Behavioral suspicion threshold', 'simple-spam-shield' ),
 			function () {
-				$value = get_option( 'sss_link_limit_max', 3 );
+				$value = get_option( 'sss_behavioral_threshold', 0.6 );
 				printf(
-					'<input type="number" name="sss_link_limit_max" value="%d" min="0" max="50" class="small-text">',
-					esc_attr( $value )
+					'<input type="number" name="sss_behavioral_threshold" value="%.1f" min="0.0" max="1.0" step="0.1" class="small-text">' .
+					'<p class="description">%s</p>',
+					esc_attr( $value ),
+					esc_html__( 'Score between 0.0 (lenient) and 1.0 (strict). Submissions scoring at or above this threshold are blocked. Default 0.6.', 'simple-spam-shield' )
 				);
 			},
 			'simple-spam-shield',
@@ -147,21 +153,46 @@ final class Admin {
 			'sss_guards'
 		);
 
-		// Logging section.
-		add_settings_section(
-			'sss_logging',
-			__( 'Logging', 'simple-spam-shield' ),
-			'__return_null',
-			'simple-spam-shield'
+		// ---- Allowlist ----
+		add_settings_section( 'sss_allowlist', __( 'Allowlist', 'simple-spam-shield' ), function () {
+			echo '<p>' . esc_html__( 'Submissions from allowlisted IPs or emails bypass all guards.', 'simple-spam-shield' ) . '</p>';
+		}, 'simple-spam-shield' );
+
+		register_setting( 'simple-spam-shield', 'sss_allowlist', [
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_textarea_field',
+			'default'           => '',
+		] );
+
+		add_settings_field(
+			'sss_allowlist',
+			__( 'Allowed IPs and emails', 'simple-spam-shield' ),
+			function () {
+				$value = get_option( 'sss_allowlist', '' );
+				printf(
+					'<textarea name="sss_allowlist" rows="6" cols="50" class="large-text code">%s</textarea>' .
+					'<p class="description">%s</p>',
+					esc_textarea( $value ),
+					esc_html__( 'One entry per line. Supports: exact IPs (192.168.1.1), CIDR ranges (10.0.0.0/8), exact emails (user@example.com), or email domains (@trusted.org).', 'simple-spam-shield' )
+				);
+			},
+			'simple-spam-shield',
+			'sss_allowlist'
 		);
 
-		self::add_toggle( 'sss_log_blocked', __( 'Log blocked submissions', 'simple-spam-shield' ), 'sss_logging', true );
+		// ---- Logging ----
+		add_settings_section( 'sss_logging', __( 'Logging', 'simple-spam-shield' ), '__return_null', 'simple-spam-shield' );
+		self::add_toggle( 'sss_log_blocked', __( 'Log blocked submissions to database', 'simple-spam-shield' ), 'sss_logging', true );
 	}
 
+	// ------------------------------------------------------------------
+	// Page renderers
+	// ------------------------------------------------------------------
+
 	/**
-	 * Render the settings page.
+	 * Render the Settings page.
 	 */
-	public static function render_page(): void {
+	public static function render_settings_page(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -169,44 +200,18 @@ final class Admin {
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html( get_admin_page_title() ) . '</h1>';
 
-		// Show block log if logging is enabled.
-		$log = get_option( 'sss_block_log', [] );
-		if ( ! empty( $log ) ) {
+		// Quick stats banner.
+		$count = Database_Manager::get_count();
+		if ( $count > 0 ) {
 			echo '<div class="notice notice-info"><p>';
 			printf(
-				/* translators: %d: number of blocked submissions */
-				esc_html__( '%d submissions blocked recently.', 'simple-spam-shield' ),
-				count( $log )
+				/* translators: 1: number of blocked submissions, 2: link to logs page */
+				esc_html__( '%1$d submissions blocked. %2$s', 'simple-spam-shield' ),
+				$count,
+				'<a href="' . esc_url( admin_url( 'admin.php?page=sss-spam-logs' ) ) . '">' .
+				esc_html__( 'View spam logs →', 'simple-spam-shield' ) . '</a>'
 			);
-			echo ' <a href="' . esc_url( wp_nonce_url( admin_url( 'options-general.php?page=simple-spam-shield&clear_log=1' ), 'sss_clear_log' ) ) . '">';
-			echo esc_html__( 'Clear log', 'simple-spam-shield' );
-			echo '</a></p></div>';
-
-			// Handle log clearing.
-			if ( isset( $_GET['clear_log'] ) && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'sss_clear_log' ) ) {
-				delete_option( 'sss_block_log' );
-				echo '<script>window.location.href="' . esc_url( admin_url( 'options-general.php?page=simple-spam-shield' ) ) . '";</script>';
-				return;
-			}
-
-			// Display recent blocks.
-			echo '<table class="widefat striped" style="max-width:800px;margin-bottom:20px">';
-			echo '<thead><tr><th>' . esc_html__( 'Time', 'simple-spam-shield' ) . '</th>';
-			echo '<th>' . esc_html__( 'Guard', 'simple-spam-shield' ) . '</th>';
-			echo '<th>' . esc_html__( 'Context', 'simple-spam-shield' ) . '</th>';
-			echo '<th>' . esc_html__( 'IP', 'simple-spam-shield' ) . '</th></tr></thead><tbody>';
-
-			foreach ( array_reverse( array_slice( $log, -20 ) ) as $entry ) {
-				printf(
-					'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>',
-					esc_html( $entry['time'] ?? '' ),
-					esc_html( $entry['guard'] ?? '' ),
-					esc_html( $entry['context'] ?? '' ),
-					esc_html( $entry['ip'] ?? '' )
-				);
-			}
-
-			echo '</tbody></table>';
+			echo '</p></div>';
 		}
 
 		echo '<form method="post" action="options.php">';
@@ -218,7 +223,60 @@ final class Admin {
 	}
 
 	/**
-	 * Helper: register a toggle (checkbox) setting + field.
+	 * Render the Spam Logs page with WP_List_Table.
+	 */
+	public static function render_logs_page(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Handle "Clear all" action.
+		if ( isset( $_GET['action'] ) && 'clear_all' === $_GET['action'] ) {
+			if ( wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'sss_clear_all_logs' ) ) {
+				Database_Manager::delete_all();
+				wp_safe_redirect( admin_url( 'admin.php?page=sss-spam-logs&cleared=1' ) );
+				exit;
+			}
+		}
+
+		// Load the list table class.
+		require_once SSS_DIR . 'admin/class-spam-logs-list-table.php';
+		$table = new \SSS\Admin\Spam_Logs_List_Table();
+		$table->prepare_items();
+
+		echo '<div class="wrap">';
+		echo '<h1 class="wp-heading-inline">' . esc_html__( 'Spam Logs', 'simple-spam-shield' ) . '</h1>';
+
+		// Show success notices.
+		if ( isset( $_GET['cleared'] ) ) {
+			echo '<div class="notice notice-success is-dismissible"><p>' .
+				esc_html__( 'All spam logs cleared.', 'simple-spam-shield' ) . '</p></div>';
+		}
+
+		$count = Database_Manager::get_count();
+		if ( $count > 0 ) {
+			$clear_url = wp_nonce_url(
+				admin_url( 'admin.php?page=sss-spam-logs&action=clear_all' ),
+				'sss_clear_all_logs'
+			);
+			echo '<a href="' . esc_url( $clear_url ) . '" class="page-title-action" onclick="return confirm(\'' .
+				esc_js( __( 'Delete all log entries?', 'simple-spam-shield' ) ) . '\')">' .
+				esc_html__( 'Clear all logs', 'simple-spam-shield' ) . '</a>';
+		}
+
+		echo '<form method="get">';
+		echo '<input type="hidden" name="page" value="sss-spam-logs">';
+		$table->display();
+		echo '</form>';
+		echo '</div>';
+	}
+
+	// ------------------------------------------------------------------
+	// Field helpers
+	// ------------------------------------------------------------------
+
+	/**
+	 * Register a toggle (checkbox) setting + field.
 	 */
 	private static function add_toggle( string $option, string $label, string $section, bool $default ): void {
 		register_setting( 'simple-spam-shield', $option, [
@@ -227,19 +285,37 @@ final class Admin {
 			'default'           => $default,
 		] );
 
-		add_settings_field(
-			$option,
-			$label,
-			function () use ( $option, $default ) {
-				$value = get_option( $option, $default );
-				printf(
-					'<input type="checkbox" name="%s" value="1" %s>',
-					esc_attr( $option ),
-					checked( $value, true, false )
-				);
-			},
-			'simple-spam-shield',
-			$section
-		);
+		add_settings_field( $option, $label, function () use ( $option, $default ) {
+			printf(
+				'<input type="checkbox" name="%s" value="1" %s>',
+				esc_attr( $option ),
+				checked( get_option( $option, $default ), true, false )
+			);
+		}, 'simple-spam-shield', $section );
+	}
+
+	/**
+	 * Register a number input setting + field.
+	 */
+	private static function add_number( string $option, string $label, string $section, int $default, int $min, int $max, string $suffix = '' ): void {
+		register_setting( 'simple-spam-shield', $option, [
+			'type'              => 'integer',
+			'sanitize_callback' => 'absint',
+			'default'           => $default,
+		] );
+
+		add_settings_field( $option, $label, function () use ( $option, $default, $min, $max, $suffix ) {
+			$value = get_option( $option, $default );
+			printf(
+				'<input type="number" name="%s" value="%d" min="%d" max="%d" class="small-text">',
+				esc_attr( $option ),
+				esc_attr( $value ),
+				$min,
+				$max
+			);
+			if ( $suffix ) {
+				echo ' ' . esc_html( $suffix );
+			}
+		}, 'simple-spam-shield', $section );
 	}
 }

@@ -53,6 +53,9 @@ register_activation_hook( __FILE__, function (): void {
 			add_option( "sss_{$key}", $value );
 		}
 	}
+
+	// Create the spam logs database table.
+	\SSS\Core\Database_Manager::create_table();
 } );
 
 /**
