@@ -24,7 +24,7 @@ define( 'SSS_FILE', __FILE__ );
 define( 'SSS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SSS_URL', plugin_dir_url( __FILE__ ) );
 
-// Autoload namespaced classes: SSS\Core\Config → includes/core/class-config.php
+// Autoload namespaced classes, e.g. SSS\Core\Config maps to includes/core/class-config.php.
 spl_autoload_register( function ( string $class ): void {
 	if ( ! str_starts_with( $class, 'SSS\\' ) ) {
 		return;
@@ -104,7 +104,7 @@ function sss_init(): void {
 	}
 
 	// 6. Self-heal the retention cron for installs that predate it
-	//    (the activation hook only fires on (re)activation).
+	// (the activation hook only fires on (re)activation).
 	if ( ! wp_next_scheduled( 'sss_purge_logs' ) ) {
 		wp_schedule_event( time(), 'daily', 'sss_purge_logs' );
 	}

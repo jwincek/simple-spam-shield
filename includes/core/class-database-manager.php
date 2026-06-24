@@ -15,7 +15,7 @@ namespace SSS\Core;
 
 final class Database_Manager {
 
-	private const DB_VERSION    = '1.0';
+	private const DB_VERSION     = '1.0';
 	private const DB_VERSION_KEY = 'sss_db_version';
 
 	/**
@@ -119,7 +119,7 @@ final class Database_Manager {
 	 */
 	public static function get_count(): int {
 		global $wpdb;
-		return (int) $wpdb->get_var( "SELECT COUNT(id) FROM " . self::table_name() ); // phpcs:ignore WordPress.DB.PreparedSQL
+		return (int) $wpdb->get_var( 'SELECT COUNT(id) FROM ' . self::table_name() ); // phpcs:ignore WordPress.DB.PreparedSQL
 	}
 
 	/**
@@ -151,7 +151,7 @@ final class Database_Manager {
 
 		return (int) $wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL
+				"DELETE FROM {$table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table name and %d placeholders are built from a known-safe count of integer IDs.
 				...$ids
 			)
 		);
@@ -189,6 +189,6 @@ final class Database_Manager {
 	 */
 	public static function delete_all(): bool {
 		global $wpdb;
-		return false !== $wpdb->query( "TRUNCATE TABLE " . self::table_name() ); // phpcs:ignore WordPress.DB.PreparedSQL
+		return false !== $wpdb->query( 'TRUNCATE TABLE ' . self::table_name() ); // phpcs:ignore WordPress.DB.PreparedSQL
 	}
 }

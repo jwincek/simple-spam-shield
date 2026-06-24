@@ -144,8 +144,12 @@ final class Spam_Logs_List_Table extends \WP_List_Table {
 		$current_page = $this->get_pagenum();
 		$offset       = ( $current_page - 1 ) * $per_page;
 
-		$orderby = sanitize_text_field( $_GET['orderby'] ?? 'blocked_at' );
-		$order   = sanitize_text_field( $_GET['order'] ?? 'DESC' );
+		// Read-only sort parameters for display; both are whitelisted in
+		// Database_Manager::get_logs(), so no nonce is required to read them.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$orderby = sanitize_text_field( wp_unslash( $_GET['orderby'] ?? 'blocked_at' ) );
+		$order   = sanitize_text_field( wp_unslash( $_GET['order'] ?? 'DESC' ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$this->items = Database_Manager::get_logs( $per_page, $offset, $orderby, $order );
 
@@ -166,7 +170,8 @@ final class Spam_Logs_List_Table extends \WP_List_Table {
 			return;
 		}
 
-		if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'bulk-spam_logs' ) ) {
+		$nonce = isset( $_REQUEST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'bulk-spam_logs' ) ) {
 			wp_die( esc_html__( 'Nonce verification failed.', 'simple-spam-shield' ) );
 		}
 

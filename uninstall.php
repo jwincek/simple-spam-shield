@@ -19,7 +19,7 @@ global $wpdb;
 
 // 1. Drop the custom spam logs database table.
 $table_name = $wpdb->prefix . 'sss_spam_logs';
-$wpdb->query( "DROP TABLE IF EXISTS {$table_name}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query( "DROP TABLE IF EXISTS {$table_name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table identifier cannot be a prepared placeholder; value is the plugin's own prefixed table name.
 
 // 2. Delete all plugin options.
 $options = [

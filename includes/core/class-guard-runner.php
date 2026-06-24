@@ -95,14 +95,19 @@ final class Guard_Runner {
 			return;
 		}
 
+		// Capturing the rejected submission for the admin log. This runs while
+		// blocking a public form post that carries no plugin nonce; the values
+		// are sanitized here and only ever rendered escaped in the log table.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
 		Database_Manager::insert( [
 			'guard'      => $guard,
 			'context'    => $context,
 			'reason'     => $reason,
-			'content'    => sanitize_textarea_field( $_POST['comment'] ?? $_POST['comment_content'] ?? '' ),
+			'content'    => sanitize_textarea_field( wp_unslash( $_POST['comment'] ?? $_POST['comment_content'] ?? '' ) ),
 			'ip_address' => Request::ip(),
-			'user_agent' => sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ?? '' ),
+			'user_agent' => sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ),
 		] );
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 	}
 
 	/**

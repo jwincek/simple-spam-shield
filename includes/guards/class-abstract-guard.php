@@ -12,7 +12,7 @@ namespace SSS\Guards;
 abstract class Abstract_Guard implements Guard_Interface {
 
 	protected string $slug;
-	protected array  $config;
+	protected array $config;
 
 	public function __construct( string $slug, array $config ) {
 		$this->slug   = $slug;

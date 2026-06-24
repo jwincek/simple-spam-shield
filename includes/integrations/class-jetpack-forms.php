@@ -87,9 +87,14 @@ final class Jetpack_Forms {
 			'content'         => implode( ' ', $content_parts ),
 			'author'          => $author,
 			'email'           => $email,
-			'sss_website_url' => sanitize_text_field( $_POST['sss_website_url'] ?? '' ),
-			'sss_nonce'       => sanitize_text_field( $_POST['sss_nonce'] ?? '' ),
-			'sss_form_loaded' => sanitize_text_field( $_POST['sss_form_loaded'] ?? '' ),
+			// JS-injected fields from a public form submission; there is no
+			// plugin nonce to verify at this stage (that is the optional Nonce
+			// guard's job downstream). Values are sanitized on read.
+			// phpcs:disable WordPress.Security.NonceVerification.Missing
+			'sss_website_url' => sanitize_text_field( wp_unslash( $_POST['sss_website_url'] ?? '' ) ),
+			'sss_nonce'       => sanitize_text_field( wp_unslash( $_POST['sss_nonce'] ?? '' ) ),
+			'sss_form_loaded' => sanitize_text_field( wp_unslash( $_POST['sss_form_loaded'] ?? '' ) ),
+			// phpcs:enable WordPress.Security.NonceVerification.Missing
 		];
 	}
 }

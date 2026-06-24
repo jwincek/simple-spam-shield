@@ -21,9 +21,9 @@ final class Keyword_Block extends Abstract_Guard {
 			return true;
 		}
 
-		$content = strtolower( $data['content'] ?? $data['comment'] ?? '' );
-		$author  = strtolower( $data['author'] ?? $data['author_name'] ?? '' );
-		$email   = strtolower( $data['email'] ?? $data['author_email'] ?? '' );
+		$content  = strtolower( $data['content'] ?? $data['comment'] ?? '' );
+		$author   = strtolower( $data['author'] ?? $data['author_name'] ?? '' );
+		$email    = strtolower( $data['email'] ?? $data['author_email'] ?? '' );
 		$haystack = "{$content} {$author} {$email}";
 
 		if ( empty( trim( $haystack ) ) ) {
@@ -45,13 +45,11 @@ final class Keyword_Block extends Abstract_Guard {
 						__( 'Submission rejected — contains blocked content.', 'simple-spam-shield' )
 					);
 				}
-			} else {
+			} elseif ( preg_match( '/\b' . preg_quote( $keyword, '/' ) . '\b/i', $haystack ) ) {
 				// Single word: word boundary match.
-				if ( preg_match( '/\b' . preg_quote( $keyword, '/' ) . '\b/i', $haystack ) ) {
-					return $this->fail(
-						__( 'Submission rejected — contains blocked content.', 'simple-spam-shield' )
-					);
-				}
+				return $this->fail(
+					__( 'Submission rejected — contains blocked content.', 'simple-spam-shield' )
+				);
 			}
 		}
 

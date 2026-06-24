@@ -92,6 +92,9 @@ final class Admin {
 	// Settings registration
 	// ------------------------------------------------------------------
 
+	/**
+	 * Register all settings, sections, and fields for the settings page.
+	 */
 	public static function register_settings(): void {
 
 		// ---- General ----
@@ -256,7 +259,7 @@ final class Admin {
 			printf(
 				/* translators: 1: number of blocked submissions, 2: link to logs page */
 				esc_html__( '%1$d submissions blocked. %2$s', 'simple-spam-shield' ),
-				$count,
+				absint( $count ),
 				'<a href="' . esc_url( admin_url( 'admin.php?page=sss-spam-logs' ) ) . '">' .
 				esc_html__( 'View spam logs →', 'simple-spam-shield' ) . '</a>'
 			);
@@ -280,8 +283,9 @@ final class Admin {
 		}
 
 		// Handle "Clear all" action.
-		if ( isset( $_GET['action'] ) && 'clear_all' === $_GET['action'] ) {
-			if ( wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'sss_clear_all_logs' ) ) {
+		if ( isset( $_GET['action'] ) && 'clear_all' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) {
+			$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+			if ( wp_verify_nonce( $nonce, 'sss_clear_all_logs' ) ) {
 				Database_Manager::delete_all();
 				wp_safe_redirect( admin_url( 'admin.php?page=sss-spam-logs&cleared=1' ) );
 				exit;
@@ -359,8 +363,8 @@ final class Admin {
 				'<input type="number" name="%s" value="%d" min="%d" max="%d" class="small-text">',
 				esc_attr( $option ),
 				esc_attr( $value ),
-				$min,
-				$max
+				absint( $min ),
+				absint( $max )
 			);
 			if ( $suffix ) {
 				echo ' ' . esc_html( $suffix );
