@@ -24,6 +24,7 @@ $wpdb->query( "DROP TABLE IF EXISTS {$simple_spam_shield_table_name}" ); // phpc
 // 2. Delete all plugin options.
 $simple_spam_shield_options = [
 	'simple_spam_shield_enabled',
+	'simple_spam_shield_hard_block',
 	'simple_spam_shield_protect_comments',
 	'simple_spam_shield_protect_woo_reviews',
 	'simple_spam_shield_protect_jetpack_forms',

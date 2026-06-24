@@ -70,7 +70,7 @@ By default the plugin uses the direct connection IP, because forwarded headers c
 
 = A legitimate submission was blocked. What do I do? =
 
-Open **Spam Shield → Spam Logs** to see which guard blocked it and why, then loosen that guard on the settings page — for example, raise the link limit, lower the behavioral threshold, or add the sender to the allowlist.
+By default a blocked comment or review is placed in the **spam queue** (Comments → Spam) rather than being rejected outright, so you can restore a false positive with one click — nothing is lost. Open **Spam Shield → Spam Logs** to see which guard blocked it and why, then loosen that guard on the settings page — for example, raise the link limit, lower the behavioral threshold, or add the sender to the allowlist. If you would rather reject blocked comments with an error message, enable that option under **Spam Shield → Settings → General**.
 
 = Does it work with caching plugins? =
 
@@ -93,6 +93,7 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 * Guard pipeline: honeypot, duplicate detection, time gate, signature, link limit, keyword block, and optional behavioral analysis.
 * Integrations for WordPress comments, WooCommerce product reviews, and Jetpack contact form blocks.
 * Allowlist supporting IPs, CIDR ranges, email addresses, and email domains, with an optional trusted-proxy mode for IP detection.
+* Blocked comments and reviews are routed to the spam queue by default (recoverable), with an option to reject them outright instead.
 * Database-backed logging with a paginated admin viewer and a configurable auto-purge retention window.
 * Suggested privacy-policy content and a clean uninstall routine.
 * Developed by Jerome Wincek, with engineering assistance from Anthropic's Claude.

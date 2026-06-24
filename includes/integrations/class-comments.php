@@ -18,6 +18,11 @@ use Simple_Spam_Shield\Core\Guard_Runner;
 final class Comments {
 
 	/**
+	 * Whether the current submission was flagged by a guard.
+	 */
+	private static bool $flagged = false;
+
+	/**
 	 * Register hooks.
 	 */
 	public static function init(): void {
@@ -26,6 +31,7 @@ final class Comments {
 		}
 
 		add_filter( 'preprocess_comment', [ __CLASS__, 'check_comment' ], 1 );
+		add_filter( 'pre_comment_approved', [ __CLASS__, 'maybe_mark_spam' ], 99, 2 );
 	}
 
 	/**
@@ -46,17 +52,37 @@ final class Comments {
 		$result = Guard_Runner::run( $data, 'comment' );
 
 		if ( is_wp_error( $result ) ) {
-			wp_die(
-				esc_html( $result->get_error_message() ),
-				esc_html__( 'Comment Blocked', 'simple-spam-shield' ),
-				[
-					'response'  => 403,
-					'back_link' => true,
-				]
-			);
+			// Hard-block mode: reject outright with an error page.
+			if ( (bool) get_option( 'simple_spam_shield_hard_block', false ) ) {
+				wp_die(
+					esc_html( $result->get_error_message() ),
+					esc_html__( 'Comment Blocked', 'simple-spam-shield' ),
+					[
+						'response'  => 403,
+						'back_link' => true,
+					]
+				);
+			}
+
+			// Default: let the comment save but route it to the spam queue,
+			// so a false positive can be recovered by a moderator instead of
+			// being lost. The status is applied via pre_comment_approved.
+			self::$flagged = true;
 		}
 
 		return $commentdata;
+	}
+
+	/**
+	 * Force a flagged comment into the spam queue.
+	 *
+	 * @param int|string $approved    Current approval status.
+	 * @param array      $commentdata Comment data (unused).
+	 * @return int|string 'spam' when flagged, otherwise the original status.
+	 */
+	public static function maybe_mark_spam( $approved, $commentdata ) {
+		unset( $commentdata );
+		return self::$flagged ? 'spam' : $approved;
 	}
 
 	/**

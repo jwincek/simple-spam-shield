@@ -81,8 +81,13 @@ final class WooCommerce {
 		$result = Guard_Runner::run( $data, 'woo_review' );
 
 		if ( is_wp_error( $result ) ) {
-			// Trash the review and set an error notice.
-			wp_trash_comment( $comment_id );
+			// Default: move the review to the spam queue so a false positive
+			// can be recovered. Hard-block mode trashes it instead.
+			if ( (bool) get_option( 'simple_spam_shield_hard_block', false ) ) {
+				wp_trash_comment( $comment_id );
+			} else {
+				wp_spam_comment( $comment_id );
+			}
 
 			if ( function_exists( 'wc_add_notice' ) ) {
 				wc_add_notice( $result->get_error_message(), 'error' );

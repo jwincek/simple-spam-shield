@@ -1,6 +1,7 @@
 {
 	"defaults": {
 		"enabled": true,
+		"hard_block": false,
 		"protect_comments": true,
 		"protect_woo_reviews": true,
 		"protect_jetpack_forms": true,

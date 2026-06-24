@@ -100,6 +100,7 @@ final class Admin {
 		// ---- General ----
 		add_settings_section( 'simple_spam_shield_general', __( 'General', 'simple-spam-shield' ), '__return_null', 'simple-spam-shield' );
 		self::add_toggle( 'simple_spam_shield_enabled', __( 'Enable spam protection', 'simple-spam-shield' ), 'simple_spam_shield_general', true );
+		self::add_toggle( 'simple_spam_shield_hard_block', __( 'Reject blocked comments with an error instead of moving them to the spam queue', 'simple-spam-shield' ), 'simple_spam_shield_general', false );
 
 		// ---- Protection targets ----
 		add_settings_section( 'simple_spam_shield_targets', __( 'Protection targets', 'simple-spam-shield' ), function () {
