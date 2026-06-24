@@ -5,7 +5,7 @@
  * Version:     1.0.0
  * Requires at least: 6.2
  * Requires PHP: 8.1
- * Author:      Jerome Wincek / Claude Opus 4.6
+ * Author:      Jerome Wincek
  * Text Domain: simple-spam-shield
  * License:     GPL-2.0-or-later
  *

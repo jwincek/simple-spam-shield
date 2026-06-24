@@ -23,7 +23,7 @@ uninstall.php            → Clean deletion of all plugin data
 
 ## Requirements
 
-- WordPress 6.9+
+- WordPress 6.2+
 - PHP 8.1+
 - Optional: WooCommerce (for review protection)
 - Optional: Jetpack (for contact form protection)

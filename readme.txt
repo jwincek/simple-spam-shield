@@ -95,6 +95,7 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 * Allowlist supporting IPs, CIDR ranges, email addresses, and email domains, with an optional trusted-proxy mode for IP detection.
 * Database-backed logging with a paginated admin viewer and a configurable auto-purge retention window.
 * Suggested privacy-policy content and a clean uninstall routine.
+* Developed by Jerome Wincek, with engineering assistance from Anthropic's Claude.
 
 == Upgrade Notice ==
 
