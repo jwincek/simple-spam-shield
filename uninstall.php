@@ -18,11 +18,11 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 global $wpdb;
 
 // 1. Drop the custom spam logs database table.
-$table_name = $wpdb->prefix . 'sss_spam_logs';
-$wpdb->query( "DROP TABLE IF EXISTS {$table_name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table identifier cannot be a prepared placeholder; value is the plugin's own prefixed table name.
+$sss_table_name = $wpdb->prefix . 'sss_spam_logs';
+$wpdb->query( "DROP TABLE IF EXISTS {$sss_table_name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table identifier cannot be a prepared placeholder; value is the plugin's own prefixed table name.
 
 // 2. Delete all plugin options.
-$options = [
+$sss_options = [
 	'sss_enabled',
 	'sss_protect_comments',
 	'sss_protect_woo_reviews',
@@ -46,8 +46,8 @@ $options = [
 	'sss_db_version',
 ];
 
-foreach ( $options as $option ) {
-	delete_option( $option );
+foreach ( $sss_options as $sss_option ) {
+	delete_option( $sss_option );
 }
 
 // 3. Clean up any duplicate-detection transients.

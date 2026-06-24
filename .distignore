@@ -1,0 +1,15 @@
+# Files and directories excluded from the distributed plugin package.
+# Everything here is development tooling or source control; none of it is
+# needed at runtime. The shipped zip is runtime-only.
+
+/.git
+/.github
+/.gitignore
+/.distignore
+/node_modules
+/vendor
+/composer.json
+/composer.lock
+/phpcs.xml.dist
+/.phpcs-cache
+/README.md

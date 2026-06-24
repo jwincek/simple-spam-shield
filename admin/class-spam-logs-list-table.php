@@ -14,6 +14,10 @@ namespace SSS\Admin;
 
 use SSS\Core\Database_Manager;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 // WP_List_Table is loaded by WordPress admin but guard against edge cases.
 if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
