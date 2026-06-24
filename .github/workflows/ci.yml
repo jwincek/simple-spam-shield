@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test:
+    name: Lint & Test (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '8.1', '8.2', '8.3' ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: PHP CodeSniffer
+        run: composer lint
+
+      - name: PHPUnit
+        run: composer test
+
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Run Plugin Check against a distribution copy with dev tooling removed,
+      # mirroring the .distignore so the check sees only what ships.
+      - name: Build distribution copy
+        run: |
+          mkdir -p build/simple-spam-shield
+          rsync -a \
+            --exclude='.git' --exclude='.github' --exclude='.gitignore' \
+            --exclude='.distignore' --exclude='node_modules' --exclude='vendor' \
+            --exclude='composer.json' --exclude='composer.lock' \
+            --exclude='phpcs.xml.dist' --exclude='.phpcs-cache' \
+            --exclude='phpunit.xml.dist' --exclude='.phpunit.cache' \
+            --exclude='.phpunit.result.cache' --exclude='tests' \
+            --exclude='README.md' --exclude='build' \
+            ./ build/simple-spam-shield/
+
+      - name: Run Plugin Check
+        uses: WordPress/plugin-check-action@v1
+        with:
+          build-dir: ./build/simple-spam-shield
+          # The plugin intentionally uses direct queries against its own
+          # custom log table; those are warnings, not errors. Fail the job
+          # only on errors so real regressions still block.
+          ignore-warnings: true
