@@ -158,6 +158,33 @@ final class Database_Manager {
 	}
 
 	/**
+	 * Delete log entries older than a given number of days.
+	 *
+	 * Rows are stored with GMT timestamps (see insert()), so the cutoff is
+	 * computed in GMT to match. A value of 0 (or less) disables pruning.
+	 *
+	 * @param int $days Retention window in days.
+	 * @return int Number of rows deleted.
+	 */
+	public static function purge_older_than( int $days ): int {
+		if ( $days <= 0 ) {
+			return 0;
+		}
+
+		global $wpdb;
+
+		$table  = self::table_name();
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
+
+		return (int) $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$table} WHERE blocked_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL
+				$cutoff
+			)
+		);
+	}
+
+	/**
 	 * Delete all log entries.
 	 */
 	public static function delete_all(): bool {

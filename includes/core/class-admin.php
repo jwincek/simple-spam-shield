@@ -22,7 +22,32 @@ final class Admin {
 	public static function init(): void {
 		add_action( 'admin_menu', [ __CLASS__, 'add_menus' ] );
 		add_action( 'admin_init', [ __CLASS__, 'register_settings' ] );
+		add_action( 'admin_init', [ __CLASS__, 'add_privacy_policy_content' ] );
 		add_action( 'admin_init', [ Database_Manager::class, 'create_table' ] );
+	}
+
+	/**
+	 * Register suggested privacy-policy text.
+	 *
+	 * The plugin records the IP address, user agent, and a content excerpt
+	 * of blocked submissions in a custom table, so site owners should
+	 * disclose this in their privacy policy.
+	 */
+	public static function add_privacy_policy_content(): void {
+		if ( ! function_exists( 'wp_add_privacy_policy_content' ) ) {
+			return;
+		}
+
+		$content = sprintf(
+			/* translators: %s: number of days entries are retained, or "indefinitely". */
+			__( 'Simple Spam Shield blocks spam submissions on comment, review, and contact forms. When a submission is blocked, the plugin records the visitor IP address, browser user-agent string, and a short excerpt of the submitted content in a log on this site, to help the site owner review false positives and tune spam protection. These entries are stored for %s and are not shared with any third party.', 'simple-spam-shield' ),
+			(int) get_option( 'sss_log_retention_days', 30 ) > 0
+				/* translators: %d: number of days. */
+				? sprintf( _n( '%d day', '%d days', (int) get_option( 'sss_log_retention_days', 30 ), 'simple-spam-shield' ), (int) get_option( 'sss_log_retention_days', 30 ) )
+				: __( 'as long as the plugin is active', 'simple-spam-shield' )
+		);
+
+		wp_add_privacy_policy_content( 'Simple Spam Shield', wp_kses_post( wpautop( $content ) ) );
 	}
 
 	// ------------------------------------------------------------------
@@ -180,9 +205,33 @@ final class Admin {
 			'sss_allowlist'
 		);
 
+		// Trusted-proxy toggle — governs whether forwarded headers are
+		// trusted for IP detection (allowlist + logging).
+		register_setting( 'simple-spam-shield', 'sss_trust_proxy', [
+			'type'              => 'boolean',
+			'sanitize_callback' => 'rest_sanitize_boolean',
+			'default'           => false,
+		] );
+
+		add_settings_field(
+			'sss_trust_proxy',
+			__( 'Trust proxy headers for IP detection', 'simple-spam-shield' ),
+			function () {
+				printf(
+					'<label><input type="checkbox" name="sss_trust_proxy" value="1" %1$s> %2$s</label><p class="description">%3$s</p>',
+					checked( get_option( 'sss_trust_proxy', false ), true, false ),
+					esc_html__( 'Use the X-Forwarded-For header to determine the visitor IP.', 'simple-spam-shield' ),
+					esc_html__( 'Enable only if this site is behind a trusted reverse proxy or load balancer (e.g. Cloudflare, Nginx). When off, the direct connection IP is used. Turning this on without a trusted proxy lets visitors spoof their IP and bypass the allowlist.', 'simple-spam-shield' )
+				);
+			},
+			'simple-spam-shield',
+			'sss_allowlist'
+		);
+
 		// ---- Logging ----
 		add_settings_section( 'sss_logging', __( 'Logging', 'simple-spam-shield' ), '__return_null', 'simple-spam-shield' );
 		self::add_toggle( 'sss_log_blocked', __( 'Log blocked submissions to database', 'simple-spam-shield' ), 'sss_logging', true );
+		self::add_number( 'sss_log_retention_days', __( 'Delete logs older than', 'simple-spam-shield' ), 'sss_logging', 30, 0, 3650, __( 'days (0 = keep forever)', 'simple-spam-shield' ) );
 	}
 
 	// ------------------------------------------------------------------

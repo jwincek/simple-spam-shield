@@ -114,13 +114,28 @@
 	}
 
 	// Also observe for dynamically-inserted forms (e.g. AJAX-loaded reviews).
+	// The callback fires on every DOM mutation, so coalesce bursts into a
+	// single debounced rescan to avoid re-querying the whole document on
+	// busy pages (infinite scroll, heavy client-side rendering).
 	if ( typeof MutationObserver !== 'undefined' ) {
+		var rescanTimer = null;
+		var scheduleRescan = function () {
+			if ( rescanTimer ) {
+				return;
+			}
+			rescanTimer = window.setTimeout( function () {
+				rescanTimer = null;
+				protectForms();
+			}, 200 );
+		};
+
 		var observer = new MutationObserver( function ( mutations ) {
-			mutations.forEach( function ( mutation ) {
-				if ( mutation.addedNodes.length ) {
-					protectForms();
+			for ( var i = 0; i < mutations.length; i++ ) {
+				if ( mutations[ i ].addedNodes.length ) {
+					scheduleRescan();
+					return;
 				}
-			} );
+			}
 		} );
 		observer.observe( document.body, { childList: true, subtree: true } );
 	}

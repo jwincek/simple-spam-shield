@@ -19,7 +19,7 @@ final class Duplicate extends Abstract_Guard {
 		$content = $data['content'] ?? $data['comment'] ?? '';
 		$author  = $data['author'] ?? $data['author_name'] ?? '';
 		$email   = $data['email'] ?? $data['author_email'] ?? '';
-		$ip      = sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' );
+		$ip      = \SSS\Core\Request::ip();
 
 		$hash = md5( $content . $author . $email . $ip );
 

@@ -56,14 +56,29 @@ register_activation_hook( __FILE__, function (): void {
 
 	// Create the spam logs database table.
 	\SSS\Core\Database_Manager::create_table();
+
+	// Schedule the daily log-retention purge.
+	if ( ! wp_next_scheduled( 'sss_purge_logs' ) ) {
+		wp_schedule_event( time(), 'daily', 'sss_purge_logs' );
+	}
 } );
 
 /**
- * Plugin deactivation — clean up transients.
+ * Plugin deactivation — clean up transients and scheduled events.
  */
 register_deactivation_hook( __FILE__, function (): void {
 	delete_transient( 'sss_stats' );
+	wp_clear_scheduled_hook( 'sss_purge_logs' );
 } );
+
+/**
+ * Daily cron callback — prune log rows older than the retention window.
+ */
+function sss_purge_logs(): void {
+	$days = (int) get_option( 'sss_log_retention_days', 30 );
+	\SSS\Core\Database_Manager::purge_older_than( $days );
+}
+add_action( 'sss_purge_logs', 'sss_purge_logs' );
 
 /**
  * Initialize the plugin on plugins_loaded.
@@ -86,6 +101,12 @@ function sss_init(): void {
 	// 5. Admin settings (admin only).
 	if ( is_admin() ) {
 		\SSS\Core\Admin::init();
+	}
+
+	// 6. Self-heal the retention cron for installs that predate it
+	//    (the activation hook only fires on (re)activation).
+	if ( ! wp_next_scheduled( 'sss_purge_logs' ) ) {
+		wp_schedule_event( time(), 'daily', 'sss_purge_logs' );
 	}
 }
 add_action( 'plugins_loaded', 'sss_init' );

@@ -100,29 +100,9 @@ final class Guard_Runner {
 			'context'    => $context,
 			'reason'     => $reason,
 			'content'    => sanitize_textarea_field( $_POST['comment'] ?? $_POST['comment_content'] ?? '' ),
-			'ip_address' => self::get_ip(),
+			'ip_address' => Request::ip(),
 			'user_agent' => sanitize_text_field( $_SERVER['HTTP_USER_AGENT'] ?? '' ),
 		] );
-	}
-
-	/**
-	 * Get the submitter's IP address.
-	 *
-	 * Proxy-aware implementation ported from Comment & Form Guard's
-	 * Comment_Form_Guard_Helpers::get_user_ip().
-	 */
-	private static function get_ip(): string {
-		if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
-		} elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			$raw = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
-			$parts = explode( ',', $raw );
-			$ip = trim( $parts[0] );
-		} else {
-			$ip = sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0' );
-		}
-
-		return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '0.0.0.0';
 	}
 
 	/**
@@ -144,7 +124,7 @@ final class Guard_Runner {
 			return false;
 		}
 
-		$ip    = self::get_ip();
+		$ip    = Request::ip();
 		$email = strtolower( $data['email'] ?? $data['author_email'] ?? '' );
 
 		foreach ( $entries as $entry ) {

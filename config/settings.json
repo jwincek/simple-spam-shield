@@ -16,6 +16,8 @@
 		"behavioral_enabled": false,
 		"behavioral_threshold": 0.6,
 		"allowlist": "",
-		"log_blocked": true
+		"trust_proxy": false,
+		"log_blocked": true,
+		"log_retention_days": 30
 	}
 }

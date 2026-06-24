@@ -39,8 +39,10 @@ $options = [
 	'sss_behavioral_enabled',
 	'sss_behavioral_threshold',
 	'sss_log_blocked',
+	'sss_log_retention_days',
 	'sss_block_log',
 	'sss_allowlist',
+	'sss_trust_proxy',
 	'sss_db_version',
 ];
 
@@ -57,3 +59,7 @@ $wpdb->query(
 
 // 4. Delete the stats transient.
 delete_transient( 'sss_stats' );
+
+// 5. Clear the scheduled retention-purge cron event (belt-and-suspenders;
+// deactivation already clears it).
+wp_clear_scheduled_hook( 'sss_purge_logs' );
