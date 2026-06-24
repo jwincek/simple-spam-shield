@@ -1,6 +1,12 @@
 <?php
 /**
- * Nonce guard — validates a WordPress nonce on the submission.
+ * Signature guard — verifies the submission carries a valid, server-signed token.
+ *
+ * Historically this guard validated a WordPress nonce, but nonces expire on
+ * the 12-hour tick and therefore produce false positives on full-page-cached
+ * pages. It now verifies the HMAC signature of the form token instead, which
+ * proves the form was served by this site without expiring. The guard slug
+ * remains "nonce" for settings compatibility.
  *
  * @package Simple_Spam_Shield
  */
@@ -9,22 +15,25 @@ declare( strict_types=1 );
 
 namespace Simple_Spam_Shield\Guards;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 final class Nonce extends Abstract_Guard {
 
-	public const ACTION = 'simple_spam_shield_form_submit';
-	public const FIELD  = 'simple_spam_shield_nonce';
+	public const FIELD = 'simple_spam_shield_form_loaded';
 
 	public function check( array $data, string $context ): \WP_Error|true {
-		$nonce = $data[ self::FIELD ] ?? '';
+		$token = (string) ( $data[ self::FIELD ] ?? '' );
 
-		// Jetpack's form processor only forwards recognized form fields,
-		// so our injected nonce hidden input is not present in the data.
-		// Skip rather than hard-fail — other guards still protect.
-		if ( empty( $nonce ) && 'jetpack_form' === $context ) {
+		// Jetpack's form processor only forwards recognized form fields, so
+		// our injected token is not present in the data. Skip rather than
+		// hard-fail — other guards still protect the submission.
+		if ( '' === $token && 'jetpack_form' === $context ) {
 			return true;
 		}
 
-		if ( ! wp_verify_nonce( $nonce, self::ACTION ) ) {
+		if ( false === \Simple_Spam_Shield\Core\Token::verify( $token ) ) {
 			return $this->fail(
 				__( 'Security check failed — please refresh the page and try again.', 'simple-spam-shield' )
 			);

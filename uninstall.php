@@ -43,6 +43,7 @@ $simple_spam_shield_options = [
 	'simple_spam_shield_block_log',
 	'simple_spam_shield_allowlist',
 	'simple_spam_shield_trust_proxy',
+	'simple_spam_shield_token_secret',
 	'simple_spam_shield_db_version',
 ];
 

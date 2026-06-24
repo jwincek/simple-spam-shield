@@ -21,7 +21,7 @@ Protection is built from a pipeline of independent **guards**. Each guard is a s
 * **Honeypot** — a hidden field that bots fill in but humans never see.
 * **Duplicate detection** — rejects identical submissions sent within a short window.
 * **Time gate** — rejects submissions completed faster than a human could plausibly type.
-* **Nonce** — validates a WordPress nonce to deter automated cross-site posting.
+* **Signature** — requires a server-signed token proving the form was served by this site, deterring automated cross-site posting.
 * **Link limit** — flags submissions that contain too many URLs.
 * **Keyword block** — rejects submissions matching a configurable blocklist of words or phrases.
 * **Behavioral analysis** (optional) — scores mouse movement, clicks, and time on page to spot bot-like interaction.
@@ -74,7 +74,7 @@ Open **Spam Shield → Spam Logs** to see which guard blocked it and why, then l
 
 = Does it work with caching plugins? =
 
-Yes. The honeypot, timing, and behavioral fields are injected by JavaScript at page load rather than baked into cached HTML, so full-page caching does not break them.
+Yes. The timing and authenticity checks use a token whose signature does not expire (unlike a WordPress nonce, which would go stale on a cached page and block legitimate visitors), so full-page caching does not produce false positives.
 
 = Does removing the plugin clean up after itself? =
 
@@ -90,7 +90,7 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 
 = 1.0.0 =
 * Initial release.
-* Guard pipeline: honeypot, duplicate detection, time gate, nonce, link limit, keyword block, and optional behavioral analysis.
+* Guard pipeline: honeypot, duplicate detection, time gate, signature, link limit, keyword block, and optional behavioral analysis.
 * Integrations for WordPress comments, WooCommerce product reviews, and Jetpack contact form blocks.
 * Allowlist supporting IPs, CIDR ranges, email addresses, and email domains, with an optional trusted-proxy mode for IP detection.
 * Database-backed logging with a paginated admin viewer and a configurable auto-purge retention window.

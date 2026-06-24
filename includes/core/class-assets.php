@@ -34,8 +34,11 @@ final class Assets {
 			[ 'in_footer' => true ]
 		);
 
+		// A signed token (issue time + HMAC). The time gate reads the signed
+		// issue time; the signature guard verifies authenticity. Because the
+		// HMAC does not expire, this stays valid under full-page caching.
 		wp_localize_script( 'simple-spam-shield-guard', 'simpleSpamShieldGuard', [
-			'nonce' => wp_create_nonce( \Simple_Spam_Shield\Guards\Nonce::ACTION ),
+			'token' => \Simple_Spam_Shield\Core\Token::issue(),
 		] );
 	}
 }

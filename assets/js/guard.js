@@ -65,20 +65,14 @@
 			'<input type="text" name="simple_spam_shield_website_url" id="simple_spam_shield_website_url" value="" tabindex="-1" autocomplete="off">';
 		form.appendChild( hp );
 
-		// Nonce field.
-		var nonce = document.createElement( 'input' );
-		nonce.type  = 'hidden';
-		nonce.name  = 'simple_spam_shield_nonce';
-		nonce.value = simpleSpamShieldGuard.nonce;
-		form.appendChild( nonce );
-
-		// Timestamp field — generated client-side so page caching
-		// cannot produce a stale value that breaks the time gate.
-		var ts = document.createElement( 'input' );
-		ts.type  = 'hidden';
-		ts.name  = 'simple_spam_shield_form_loaded';
-		ts.value = Math.floor( Date.now() / 1000 );
-		form.appendChild( ts );
+		// Signed token — carries the server-issued, HMAC-signed timestamp.
+		// The time gate reads the signed issue time and the signature guard
+		// verifies authenticity, so a stale/forged value cannot pass.
+		var token = document.createElement( 'input' );
+		token.type  = 'hidden';
+		token.name  = 'simple_spam_shield_form_loaded';
+		token.value = simpleSpamShieldGuard.token;
+		form.appendChild( token );
 
 		// Behavioral data field — populated at submit time.
 		var bd = document.createElement( 'input' );

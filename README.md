@@ -41,8 +41,8 @@ uninstall.php            → Clean deletion of all plugin data
 |---|---|---|---|
 | **Honeypot** | 100 | On | Hidden field that bots fill in but humans never see |
 | **Duplicate detection** | 95 | On | Rejects identical submissions within a 60-second window using transient-based hashing |
-| **Time gate** | 90 | On | Rejects submissions completed faster than a human could type (configurable, default 3s) |
-| **Nonce** | 80 | On | Validates a WordPress nonce to prevent cross-site forgeries |
+| **Time gate** | 90 | On | Rejects submissions completed faster than a human could type (configurable, default 3s), using a server-signed issue time |
+| **Signature** | 80 | On | Requires a valid server-signed token (HMAC) proving the form was served by this site; does not expire, so it is cache-safe |
 | **Link limit** | 70 | On | Flags submissions containing too many URLs (configurable, default 3) |
 | **Keyword block** | 60 | On | Rejects submissions matching blocked keywords or phrases |
 | **Behavioral analysis** | 55 | Off | Scores mouse movements, clicks, and time-on-page to detect bot-like interaction patterns |
@@ -53,7 +53,7 @@ Guards run in descending weight order. All can be toggled individually from the 
 
 ### Front-end injection
 
-`guard.js` automatically finds comment forms, WooCommerce review forms, and Jetpack contact form blocks on the page via CSS selectors. It injects hidden fields for the honeypot, nonce, timestamp, and behavioral data into each form. A `MutationObserver` catches dynamically-loaded forms (e.g. AJAX-loaded WooCommerce reviews). The timestamp is generated client-side via `Date.now()` to avoid stale values from page caching. Behavioral data (mouse movement count, click count, time on page) is collected continuously and serialized into a JSON hidden field at submit time.
+`guard.js` automatically finds comment forms, WooCommerce review forms, and Jetpack contact form blocks on the page via CSS selectors. It injects hidden fields for the honeypot, the signed form token, and behavioral data into each form. A `MutationObserver` (debounced) catches dynamically-loaded forms (e.g. AJAX-loaded WooCommerce reviews). The token is an HMAC-signed `<issued_at>.<signature>` string minted server-side (`includes/core/class-token.php`); the time gate reads the signed issue time and the signature guard verifies authenticity. Behavioral data (mouse movement count, click count, time on page) is collected continuously and serialized into a JSON hidden field at submit time.
 
 ### Server-side pipeline
 
@@ -63,7 +63,7 @@ When a form is submitted, the relevant integration class (Comments, WooCommerce,
 
 Jetpack contact forms require special handling because Jetpack's form processor strips unrecognized POST fields before our spam filter fires. The integration solves this with a two-phase pipeline:
 
-- **Phase 1** (`template_redirect`, priority 1) — Fires before Jetpack's `process_form_submission` (priority 10). At this point `$_POST` still contains our JS-injected fields. The integration runs the JS-dependent guards (honeypot, nonce, time gate, behavioral) against raw POST data. If any fail, a rejection flag is stored on the class — no `wp_die()`, no short-circuit.
+- **Phase 1** (`template_redirect`, priority 1) — Fires before Jetpack's `process_form_submission` (priority 10). At this point `$_POST` still contains our JS-injected fields. The integration runs the JS-dependent guards (honeypot, signature, time gate, behavioral) against raw POST data. If any fail, a rejection flag is stored on the class — no `wp_die()`, no short-circuit.
 
 - **Phase 2** (`jetpack_contact_form_is_spam` filter) — Fires during Jetpack's own processing. If Phase 1 flagged the submission, this filter returns `true` immediately and Jetpack handles the rejection through its native UX. If Phase 1 passed, the content-based guards (keyword block, link limit, duplicate detection) run against Jetpack's structured `$form_data`. The JS-dependent guards skip automatically in Phase 2 via context-aware logic, avoiding duplicate checks.
 
@@ -94,7 +94,7 @@ The plugin's architecture draws from two sources:
 - **Guard pipeline with weighted priority and short-circuit** — Guards run as an ordered pipeline rather than being registered individually or checked with sequential if/else blocks.
 - **Normalized data layer** — Each integration normalizes its form data into a common format so guards never need to know about WP comment arrays, WooCommerce review data, or Jetpack field structures.
 - **Two-phase Jetpack processing** — Solves the field-stripping problem without `wp_die()` or undocumented hooks, keeping Jetpack in control of the UX.
-- **Client-side timestamps** — Generated via `Date.now()` instead of server-side `time()`, eliminating false positives from page caching.
+- **Server-signed form token** — A single HMAC-signed `<issued_at>.<signature>` token drives both the time gate (tamper-proof issue time) and the signature guard (proof the form came from this site). Because the HMAC does not expire, it is safe under full-page caching — where a WordPress nonce would go stale and block legitimate visitors.
 - **No jQuery dependency** — The front-end script uses vanilla JS with `MutationObserver` for dynamic form detection.
 - **PHP 8.1+ with strict types** — Union return types, named enums, `str_starts_with`/`str_contains`, and `match` expressions throughout.
 

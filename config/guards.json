@@ -15,8 +15,8 @@
 			"weight": 90
 		},
 		"nonce": {
-			"label": "Nonce verification",
-			"description": "Requires a valid WordPress nonce to prevent cross-site forgeries.",
+			"label": "Signature verification",
+			"description": "Requires a valid, server-signed form token confirming the submission originated from this site. Unlike a WordPress nonce it does not expire, so it is safe with full-page caching.",
 			"enabled_by_default": true,
 			"weight": 80
 		},

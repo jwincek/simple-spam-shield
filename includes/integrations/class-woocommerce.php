@@ -74,7 +74,6 @@ final class WooCommerce {
 			// guard's job downstream). Values are sanitized on read.
 			// phpcs:disable WordPress.Security.NonceVerification.Missing
 			'simple_spam_shield_website_url' => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_website_url'] ?? '' ) ),
-			'simple_spam_shield_nonce'       => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_nonce'] ?? '' ) ),
 			'simple_spam_shield_form_loaded' => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_form_loaded'] ?? '' ) ),
 			// phpcs:enable WordPress.Security.NonceVerification.Missing
 		];
