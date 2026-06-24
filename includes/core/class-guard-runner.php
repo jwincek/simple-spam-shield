@@ -12,9 +12,9 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Core;
+namespace Simple_Spam_Shield\Core;
 
-use SSS\Guards\Guard_Interface;
+use Simple_Spam_Shield\Guards\Guard_Interface;
 
 final class Guard_Runner {
 
@@ -28,13 +28,13 @@ final class Guard_Runner {
 		$definitions = Config::get( 'guards', 'guards', [] );
 
 		$guard_map = [
-			'honeypot'      => \SSS\Guards\Honeypot::class,
-			'time_gate'     => \SSS\Guards\Time_Gate::class,
-			'nonce'         => \SSS\Guards\Nonce::class,
-			'link_limit'    => \SSS\Guards\Link_Limit::class,
-			'keyword_block' => \SSS\Guards\Keyword_Block::class,
-			'duplicate'     => \SSS\Guards\Duplicate::class,
-			'behavioral'    => \SSS\Guards\Behavioral::class,
+			'honeypot'      => \Simple_Spam_Shield\Guards\Honeypot::class,
+			'time_gate'     => \Simple_Spam_Shield\Guards\Time_Gate::class,
+			'nonce'         => \Simple_Spam_Shield\Guards\Nonce::class,
+			'link_limit'    => \Simple_Spam_Shield\Guards\Link_Limit::class,
+			'keyword_block' => \Simple_Spam_Shield\Guards\Keyword_Block::class,
+			'duplicate'     => \Simple_Spam_Shield\Guards\Duplicate::class,
+			'behavioral'    => \Simple_Spam_Shield\Guards\Behavioral::class,
 		];
 
 		foreach ( $definitions as $slug => $def ) {
@@ -61,7 +61,7 @@ final class Guard_Runner {
 	 * @return \WP_Error|true  True if all guards pass, WP_Error on first failure.
 	 */
 	public static function run( array $data, string $context ): \WP_Error|true {
-		if ( ! (bool) get_option( 'sss_enabled', true ) ) {
+		if ( ! (bool) get_option( 'simple_spam_shield_enabled', true ) ) {
 			return true;
 		}
 
@@ -91,7 +91,7 @@ final class Guard_Runner {
 	 * Log a blocked submission to the custom database table.
 	 */
 	private static function log_block( string $guard, string $context, string $reason ): void {
-		if ( ! (bool) get_option( 'sss_log_blocked', true ) ) {
+		if ( ! (bool) get_option( 'simple_spam_shield_log_blocked', true ) ) {
 			return;
 		}
 
@@ -117,7 +117,7 @@ final class Guard_Runner {
 	 * adapted to our config-driven architecture.
 	 */
 	private static function is_allowlisted( array $data ): bool {
-		$allowlisted_raw = get_option( 'sss_allowlist', '' );
+		$allowlisted_raw = get_option( 'simple_spam_shield_allowlist', '' );
 
 		if ( empty( $allowlisted_raw ) ) {
 			return false;

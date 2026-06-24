@@ -11,7 +11,7 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Guards;
+namespace Simple_Spam_Shield\Guards;
 
 final class Duplicate extends Abstract_Guard {
 
@@ -19,11 +19,11 @@ final class Duplicate extends Abstract_Guard {
 		$content = $data['content'] ?? $data['comment'] ?? '';
 		$author  = $data['author'] ?? $data['author_name'] ?? '';
 		$email   = $data['email'] ?? $data['author_email'] ?? '';
-		$ip      = \SSS\Core\Request::ip();
+		$ip      = \Simple_Spam_Shield\Core\Request::ip();
 
 		$hash = md5( $content . $author . $email . $ip );
 
-		$transient_key = 'sss_dup_' . $hash;
+		$transient_key = 'simple_spam_shield_dup_' . $hash;
 		$window        = (int) ( $this->config['window_seconds'] ?? 60 );
 
 		if ( get_transient( $transient_key ) ) {

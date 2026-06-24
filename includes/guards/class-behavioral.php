@@ -12,12 +12,12 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Guards;
+namespace Simple_Spam_Shield\Guards;
 
 final class Behavioral extends Abstract_Guard {
 
 	public function check( array $data, string $context ): \WP_Error|true {
-		$json = $data['sss_behavioral_data'] ?? '';
+		$json = $data['simple_spam_shield_behavioral_data'] ?? '';
 
 		// If the behavioral data field is missing (e.g. Jetpack strips it),
 		// skip rather than hard-fail — same pattern as the other JS-dependent guards.
@@ -34,7 +34,7 @@ final class Behavioral extends Abstract_Guard {
 		$score = $this->calculate_score( $behavioral );
 
 		$threshold = (float) get_option(
-			'sss_behavioral_threshold',
+			'simple_spam_shield_behavioral_threshold',
 			$this->config['threshold'] ?? 0.6
 		);
 

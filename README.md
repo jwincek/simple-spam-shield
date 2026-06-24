@@ -75,11 +75,11 @@ Submissions from allowlisted IPs or emails bypass all guards entirely. The allow
 
 ### Logging
 
-Blocked submissions are logged to a custom database table (`wp_sss_spam_logs`) with guard name, context, reason, content excerpt, IP, and user agent. The **Spam Shield → Spam Logs** admin page provides a paginated, sortable `WP_List_Table` with individual and bulk delete actions. Logging can be disabled from the settings page.
+Blocked submissions are logged to a custom database table (`wp_simple_spam_shield_spam_logs`) with guard name, context, reason, content excerpt, IP, and user agent. The **Spam Shield → Spam Logs** admin page provides a paginated, sortable `WP_List_Table` with individual and bulk delete actions. Logging can be disabled from the settings page.
 
 ### Clean uninstall
 
-When the plugin is deleted (not just deactivated), `uninstall.php` drops the custom database table, removes all `sss_*` options, and purges duplicate-detection transients.
+When the plugin is deleted (not just deactivated), `uninstall.php` drops the custom database table, removes all `simple_spam_shield_*` options, and purges duplicate-detection transients.
 
 ## Lineage
 

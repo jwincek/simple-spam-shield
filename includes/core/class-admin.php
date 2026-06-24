@@ -12,7 +12,7 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Core;
+namespace Simple_Spam_Shield\Core;
 
 final class Admin {
 
@@ -41,9 +41,9 @@ final class Admin {
 		$content = sprintf(
 			/* translators: %s: number of days entries are retained, or "indefinitely". */
 			__( 'Simple Spam Shield blocks spam submissions on comment, review, and contact forms. When a submission is blocked, the plugin records the visitor IP address, browser user-agent string, and a short excerpt of the submitted content in a log on this site, to help the site owner review false positives and tune spam protection. These entries are stored for %s and are not shared with any third party.', 'simple-spam-shield' ),
-			(int) get_option( 'sss_log_retention_days', 30 ) > 0
+			(int) get_option( 'simple_spam_shield_log_retention_days', 30 ) > 0
 				/* translators: %d: number of days. */
-				? sprintf( _n( '%d day', '%d days', (int) get_option( 'sss_log_retention_days', 30 ), 'simple-spam-shield' ), (int) get_option( 'sss_log_retention_days', 30 ) )
+				? sprintf( _n( '%d day', '%d days', (int) get_option( 'simple_spam_shield_log_retention_days', 30 ), 'simple-spam-shield' ), (int) get_option( 'simple_spam_shield_log_retention_days', 30 ) )
 				: __( 'as long as the plugin is active', 'simple-spam-shield' )
 		);
 
@@ -83,7 +83,7 @@ final class Admin {
 			__( 'Spam Logs', 'simple-spam-shield' ),
 			__( 'Spam Logs', 'simple-spam-shield' ),
 			'manage_options',
-			'sss-spam-logs',
+			'simple-spam-shield-spam-logs',
 			[ __CLASS__, 'render_logs_page' ]
 		);
 	}
@@ -98,29 +98,29 @@ final class Admin {
 	public static function register_settings(): void {
 
 		// ---- General ----
-		add_settings_section( 'sss_general', __( 'General', 'simple-spam-shield' ), '__return_null', 'simple-spam-shield' );
-		self::add_toggle( 'sss_enabled', __( 'Enable spam protection', 'simple-spam-shield' ), 'sss_general', true );
+		add_settings_section( 'simple_spam_shield_general', __( 'General', 'simple-spam-shield' ), '__return_null', 'simple-spam-shield' );
+		self::add_toggle( 'simple_spam_shield_enabled', __( 'Enable spam protection', 'simple-spam-shield' ), 'simple_spam_shield_general', true );
 
 		// ---- Protection targets ----
-		add_settings_section( 'sss_targets', __( 'Protection targets', 'simple-spam-shield' ), function () {
+		add_settings_section( 'simple_spam_shield_targets', __( 'Protection targets', 'simple-spam-shield' ), function () {
 			echo '<p>' . esc_html__( 'Choose which form types to protect.', 'simple-spam-shield' ) . '</p>';
 		}, 'simple-spam-shield' );
 
-		self::add_toggle( 'sss_protect_comments', __( 'WordPress comments', 'simple-spam-shield' ), 'sss_targets', true );
-		self::add_toggle( 'sss_protect_woo_reviews', __( 'WooCommerce product reviews', 'simple-spam-shield' ), 'sss_targets', true );
-		self::add_toggle( 'sss_protect_jetpack_forms', __( 'Jetpack contact form blocks', 'simple-spam-shield' ), 'sss_targets', true );
+		self::add_toggle( 'simple_spam_shield_protect_comments', __( 'WordPress comments', 'simple-spam-shield' ), 'simple_spam_shield_targets', true );
+		self::add_toggle( 'simple_spam_shield_protect_woo_reviews', __( 'WooCommerce product reviews', 'simple-spam-shield' ), 'simple_spam_shield_targets', true );
+		self::add_toggle( 'simple_spam_shield_protect_jetpack_forms', __( 'Jetpack contact form blocks', 'simple-spam-shield' ), 'simple_spam_shield_targets', true );
 
 		// ---- Guard toggles ----
-		add_settings_section( 'sss_guards', __( 'Spam guards', 'simple-spam-shield' ), function () {
+		add_settings_section( 'simple_spam_shield_guards', __( 'Spam guards', 'simple-spam-shield' ), function () {
 			echo '<p>' . esc_html__( 'Enable or disable individual spam checks.', 'simple-spam-shield' ) . '</p>';
 		}, 'simple-spam-shield' );
 
 		$guard_defs = Config::get( 'guards', 'guards', [] );
 		foreach ( $guard_defs as $slug => $def ) {
 			self::add_toggle(
-				"sss_{$slug}_enabled",
+				"simple_spam_shield_{$slug}_enabled",
 				$def['label'] ?? $slug,
-				'sss_guards',
+				'simple_spam_shield_guards',
 				$def['enabled_by_default'] ?? true
 			);
 		}
@@ -128,13 +128,13 @@ final class Admin {
 		// ---- Guard-specific settings ----
 
 		// Time gate seconds.
-		self::add_number( 'sss_time_gate_seconds', __( 'Minimum seconds before submit', 'simple-spam-shield' ), 'sss_guards', 3, 1, 30, __( 'seconds', 'simple-spam-shield' ) );
+		self::add_number( 'simple_spam_shield_time_gate_seconds', __( 'Minimum seconds before submit', 'simple-spam-shield' ), 'simple_spam_shield_guards', 3, 1, 30, __( 'seconds', 'simple-spam-shield' ) );
 
 		// Link limit.
-		self::add_number( 'sss_link_limit_max', __( 'Maximum links per submission', 'simple-spam-shield' ), 'sss_guards', 3, 0, 50 );
+		self::add_number( 'simple_spam_shield_link_limit_max', __( 'Maximum links per submission', 'simple-spam-shield' ), 'simple_spam_shield_guards', 3, 0, 50 );
 
 		// Behavioral threshold.
-		register_setting( 'simple-spam-shield', 'sss_behavioral_threshold', [
+		register_setting( 'simple-spam-shield', 'simple_spam_shield_behavioral_threshold', [
 			'type'              => 'number',
 			'sanitize_callback' => function ( $v ) {
 				return max( 0.0, min( 1.0, (float) $v ) );
@@ -143,98 +143,98 @@ final class Admin {
 		] );
 
 		add_settings_field(
-			'sss_behavioral_threshold',
+			'simple_spam_shield_behavioral_threshold',
 			__( 'Behavioral suspicion threshold', 'simple-spam-shield' ),
 			function () {
-				$value = get_option( 'sss_behavioral_threshold', 0.6 );
+				$value = get_option( 'simple_spam_shield_behavioral_threshold', 0.6 );
 				printf(
-					'<input type="number" name="sss_behavioral_threshold" value="%.1f" min="0.0" max="1.0" step="0.1" class="small-text">' .
+					'<input type="number" name="simple_spam_shield_behavioral_threshold" value="%.1f" min="0.0" max="1.0" step="0.1" class="small-text">' .
 					'<p class="description">%s</p>',
 					esc_attr( $value ),
 					esc_html__( 'Score between 0.0 (lenient) and 1.0 (strict). Submissions scoring at or above this threshold are blocked. Default 0.6.', 'simple-spam-shield' )
 				);
 			},
 			'simple-spam-shield',
-			'sss_guards'
+			'simple_spam_shield_guards'
 		);
 
 		// Blocked keywords.
-		register_setting( 'simple-spam-shield', 'sss_blocked_keywords', [
+		register_setting( 'simple-spam-shield', 'simple_spam_shield_blocked_keywords', [
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_textarea_field',
 			'default'           => '',
 		] );
 
 		add_settings_field(
-			'sss_blocked_keywords',
+			'simple_spam_shield_blocked_keywords',
 			__( 'Blocked keywords', 'simple-spam-shield' ),
 			function () {
-				$value = get_option( 'sss_blocked_keywords', '' );
+				$value = get_option( 'simple_spam_shield_blocked_keywords', '' );
 				printf(
-					'<textarea name="sss_blocked_keywords" rows="8" cols="50" class="large-text code">%s</textarea>' .
+					'<textarea name="simple_spam_shield_blocked_keywords" rows="8" cols="50" class="large-text code">%s</textarea>' .
 					'<p class="description">%s</p>',
 					esc_textarea( $value ),
 					esc_html__( 'One keyword or phrase per line. Case-insensitive.', 'simple-spam-shield' )
 				);
 			},
 			'simple-spam-shield',
-			'sss_guards'
+			'simple_spam_shield_guards'
 		);
 
 		// ---- Allowlist ----
-		add_settings_section( 'sss_allowlist', __( 'Allowlist', 'simple-spam-shield' ), function () {
+		add_settings_section( 'simple_spam_shield_allowlist', __( 'Allowlist', 'simple-spam-shield' ), function () {
 			echo '<p>' . esc_html__( 'Submissions from allowlisted IPs or emails bypass all guards.', 'simple-spam-shield' ) . '</p>';
 		}, 'simple-spam-shield' );
 
-		register_setting( 'simple-spam-shield', 'sss_allowlist', [
+		register_setting( 'simple-spam-shield', 'simple_spam_shield_allowlist', [
 			'type'              => 'string',
 			'sanitize_callback' => 'sanitize_textarea_field',
 			'default'           => '',
 		] );
 
 		add_settings_field(
-			'sss_allowlist',
+			'simple_spam_shield_allowlist',
 			__( 'Allowed IPs and emails', 'simple-spam-shield' ),
 			function () {
-				$value = get_option( 'sss_allowlist', '' );
+				$value = get_option( 'simple_spam_shield_allowlist', '' );
 				printf(
-					'<textarea name="sss_allowlist" rows="6" cols="50" class="large-text code">%s</textarea>' .
+					'<textarea name="simple_spam_shield_allowlist" rows="6" cols="50" class="large-text code">%s</textarea>' .
 					'<p class="description">%s</p>',
 					esc_textarea( $value ),
 					esc_html__( 'One entry per line. Supports: exact IPs (192.168.1.1), CIDR ranges (10.0.0.0/8), exact emails (user@example.com), or email domains (@trusted.org).', 'simple-spam-shield' )
 				);
 			},
 			'simple-spam-shield',
-			'sss_allowlist'
+			'simple_spam_shield_allowlist'
 		);
 
 		// Trusted-proxy toggle — governs whether forwarded headers are
 		// trusted for IP detection (allowlist + logging).
-		register_setting( 'simple-spam-shield', 'sss_trust_proxy', [
+		register_setting( 'simple-spam-shield', 'simple_spam_shield_trust_proxy', [
 			'type'              => 'boolean',
 			'sanitize_callback' => 'rest_sanitize_boolean',
 			'default'           => false,
 		] );
 
 		add_settings_field(
-			'sss_trust_proxy',
+			'simple_spam_shield_trust_proxy',
 			__( 'Trust proxy headers for IP detection', 'simple-spam-shield' ),
 			function () {
 				printf(
-					'<label><input type="checkbox" name="sss_trust_proxy" value="1" %1$s> %2$s</label><p class="description">%3$s</p>',
-					checked( get_option( 'sss_trust_proxy', false ), true, false ),
+					'<label><input type="checkbox" name="simple_spam_shield_trust_proxy" value="1" %1$s> %2$s</label><p class="description">%3$s</p>',
+					checked( get_option( 'simple_spam_shield_trust_proxy', false ), true, false ),
 					esc_html__( 'Use the X-Forwarded-For header to determine the visitor IP.', 'simple-spam-shield' ),
 					esc_html__( 'Enable only if this site is behind a trusted reverse proxy or load balancer (e.g. Cloudflare, Nginx). When off, the direct connection IP is used. Turning this on without a trusted proxy lets visitors spoof their IP and bypass the allowlist.', 'simple-spam-shield' )
 				);
 			},
 			'simple-spam-shield',
-			'sss_allowlist'
+			'simple_spam_shield_allowlist'
 		);
 
 		// ---- Logging ----
-		add_settings_section( 'sss_logging', __( 'Logging', 'simple-spam-shield' ), '__return_null', 'simple-spam-shield' );
-		self::add_toggle( 'sss_log_blocked', __( 'Log blocked submissions to database', 'simple-spam-shield' ), 'sss_logging', true );
-		self::add_number( 'sss_log_retention_days', __( 'Delete logs older than', 'simple-spam-shield' ), 'sss_logging', 30, 0, 3650, __( 'days (0 = keep forever)', 'simple-spam-shield' ) );
+		add_settings_section( 'simple_spam_shield_logging', __( 'Logging', 'simple-spam-shield' ), '__return_null', 'simple-spam-shield' );
+		self::add_toggle( 'simple_spam_shield_log_blocked', __( 'Log blocked submissions to database', 'simple-spam-shield' ), 'simple_spam_shield_logging', true );
+		self::add_number( 'simple_spam_shield_log_retention_days', __( 'Delete logs older than', 'simple-spam-shield' ), 'simple_spam_shield_logging', 30, 0, 3650, __( 'days (0 = keep forever)', 'simple-spam-shield' ) );
 	}
 
 	// ------------------------------------------------------------------
@@ -260,7 +260,7 @@ final class Admin {
 				/* translators: 1: number of blocked submissions, 2: link to logs page */
 				esc_html__( '%1$d submissions blocked. %2$s', 'simple-spam-shield' ),
 				absint( $count ),
-				'<a href="' . esc_url( admin_url( 'admin.php?page=sss-spam-logs' ) ) . '">' .
+				'<a href="' . esc_url( admin_url( 'admin.php?page=simple-spam-shield-spam-logs' ) ) . '">' .
 				esc_html__( 'View spam logs →', 'simple-spam-shield' ) . '</a>'
 			);
 			echo '</p></div>';
@@ -285,16 +285,16 @@ final class Admin {
 		// Handle "Clear all" action.
 		if ( isset( $_GET['action'] ) && 'clear_all' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) {
 			$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
-			if ( wp_verify_nonce( $nonce, 'sss_clear_all_logs' ) ) {
+			if ( wp_verify_nonce( $nonce, 'simple_spam_shield_clear_all_logs' ) ) {
 				Database_Manager::delete_all();
-				wp_safe_redirect( admin_url( 'admin.php?page=sss-spam-logs&cleared=1' ) );
+				wp_safe_redirect( admin_url( 'admin.php?page=simple-spam-shield-spam-logs&cleared=1' ) );
 				exit;
 			}
 		}
 
 		// Load the list table class.
-		require_once SSS_DIR . 'admin/class-spam-logs-list-table.php';
-		$table = new \SSS\Admin\Spam_Logs_List_Table();
+		require_once SIMPLE_SPAM_SHIELD_DIR . 'admin/class-spam-logs-list-table.php';
+		$table = new \Simple_Spam_Shield\Admin\Spam_Logs_List_Table();
 		$table->prepare_items();
 
 		echo '<div class="wrap">';
@@ -309,8 +309,8 @@ final class Admin {
 		$count = Database_Manager::get_count();
 		if ( $count > 0 ) {
 			$clear_url = wp_nonce_url(
-				admin_url( 'admin.php?page=sss-spam-logs&action=clear_all' ),
-				'sss_clear_all_logs'
+				admin_url( 'admin.php?page=simple-spam-shield-spam-logs&action=clear_all' ),
+				'simple_spam_shield_clear_all_logs'
 			);
 			echo '<a href="' . esc_url( $clear_url ) . '" class="page-title-action" onclick="return confirm(\'' .
 				esc_js( __( 'Delete all log entries?', 'simple-spam-shield' ) ) . '\')">' .
@@ -318,7 +318,7 @@ final class Admin {
 		}
 
 		echo '<form method="get">';
-		echo '<input type="hidden" name="page" value="sss-spam-logs">';
+		echo '<input type="hidden" name="page" value="simple-spam-shield-spam-logs">';
 		$table->display();
 		echo '</form>';
 		echo '</div>';

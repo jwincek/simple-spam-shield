@@ -10,7 +10,7 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Core;
+namespace Simple_Spam_Shield\Core;
 
 final class Config {
 

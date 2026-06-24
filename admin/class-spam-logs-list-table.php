@@ -10,9 +10,9 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Admin;
+namespace Simple_Spam_Shield\Admin;
 
-use SSS\Core\Database_Manager;
+use Simple_Spam_Shield\Core\Database_Manager;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -88,7 +88,7 @@ final class Spam_Logs_List_Table extends \WP_List_Table {
 		$delete_url = wp_nonce_url(
 			add_query_arg(
 				[
-					'page'   => 'sss-spam-logs',
+					'page'   => 'simple-spam-shield-spam-logs',
 					'action' => 'delete',
 					'log_id' => [ (int) $item->id ],
 				],

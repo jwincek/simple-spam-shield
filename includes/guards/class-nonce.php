@@ -7,12 +7,12 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Guards;
+namespace Simple_Spam_Shield\Guards;
 
 final class Nonce extends Abstract_Guard {
 
-	public const ACTION = 'sss_form_submit';
-	public const FIELD  = 'sss_nonce';
+	public const ACTION = 'simple_spam_shield_form_submit';
+	public const FIELD  = 'simple_spam_shield_nonce';
 
 	public function check( array $data, string $context ): \WP_Error|true {
 		$nonce = $data[ self::FIELD ] ?? '';

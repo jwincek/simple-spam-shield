@@ -7,7 +7,7 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Guards;
+namespace Simple_Spam_Shield\Guards;
 
 interface Guard_Interface {
 

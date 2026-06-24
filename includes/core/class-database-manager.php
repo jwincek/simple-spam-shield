@@ -11,19 +11,19 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Core;
+namespace Simple_Spam_Shield\Core;
 
 final class Database_Manager {
 
 	private const DB_VERSION     = '1.0';
-	private const DB_VERSION_KEY = 'sss_db_version';
+	private const DB_VERSION_KEY = 'simple_spam_shield_db_version';
 
 	/**
 	 * Get the full table name with prefix.
 	 */
 	public static function table_name(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'sss_spam_logs';
+		return $wpdb->prefix . 'simple_spam_shield_spam_logs';
 	}
 
 	/**

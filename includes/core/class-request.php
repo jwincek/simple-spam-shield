@@ -14,7 +14,7 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Core;
+namespace Simple_Spam_Shield\Core;
 
 final class Request {
 
@@ -30,7 +30,7 @@ final class Request {
 
 		// Only consult forwarded headers when the site is explicitly
 		// configured to sit behind a trusted reverse proxy / load balancer.
-		if ( get_option( 'sss_trust_proxy', false ) && ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
+		if ( get_option( 'simple_spam_shield_trust_proxy', false ) && ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
 			$raw       = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
 			$forwarded = trim( explode( ',', $raw )[0] );
 

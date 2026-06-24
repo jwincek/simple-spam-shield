@@ -7,7 +7,7 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Core;
+namespace Simple_Spam_Shield\Core;
 
 final class Assets {
 
@@ -15,27 +15,27 @@ final class Assets {
 	 * Enqueue front-end scripts and styles.
 	 */
 	public static function enqueue(): void {
-		if ( ! (bool) get_option( 'sss_enabled', true ) ) {
+		if ( ! (bool) get_option( 'simple_spam_shield_enabled', true ) ) {
 			return;
 		}
 
 		wp_enqueue_style(
-			'sss-honeypot',
-			SSS_URL . 'assets/css/honeypot.css',
+			'simple-spam-shield-honeypot',
+			SIMPLE_SPAM_SHIELD_URL . 'assets/css/honeypot.css',
 			[],
-			SSS_VERSION
+			SIMPLE_SPAM_SHIELD_VERSION
 		);
 
 		wp_enqueue_script(
-			'sss-guard',
-			SSS_URL . 'assets/js/guard.js',
+			'simple-spam-shield-guard',
+			SIMPLE_SPAM_SHIELD_URL . 'assets/js/guard.js',
 			[],
-			SSS_VERSION,
+			SIMPLE_SPAM_SHIELD_VERSION,
 			[ 'in_footer' => true ]
 		);
 
-		wp_localize_script( 'sss-guard', 'sssGuard', [
-			'nonce' => wp_create_nonce( \SSS\Guards\Nonce::ACTION ),
+		wp_localize_script( 'simple-spam-shield-guard', 'simpleSpamShieldGuard', [
+			'nonce' => wp_create_nonce( \Simple_Spam_Shield\Guards\Nonce::ACTION ),
 		] );
 	}
 }

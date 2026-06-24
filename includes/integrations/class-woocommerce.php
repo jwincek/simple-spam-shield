@@ -12,9 +12,9 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Integrations;
+namespace Simple_Spam_Shield\Integrations;
 
-use SSS\Core\Guard_Runner;
+use Simple_Spam_Shield\Core\Guard_Runner;
 
 final class WooCommerce {
 
@@ -22,7 +22,7 @@ final class WooCommerce {
 	 * Register hooks — only if WooCommerce is active.
 	 */
 	public static function init(): void {
-		if ( ! (bool) get_option( 'sss_protect_woo_reviews', true ) ) {
+		if ( ! (bool) get_option( 'simple_spam_shield_protect_woo_reviews', true ) ) {
 			return;
 		}
 
@@ -50,7 +50,7 @@ final class WooCommerce {
 		// The preprocess_comment filter in the Comments integration
 		// already covers this path. But if that integration is disabled,
 		// this hook provides standalone WooCommerce protection.
-		if ( (bool) get_option( 'sss_protect_comments', true ) ) {
+		if ( (bool) get_option( 'simple_spam_shield_protect_comments', true ) ) {
 			// Already handled by the Comments integration.
 			return;
 		}
@@ -73,9 +73,9 @@ final class WooCommerce {
 			// plugin nonce to verify at this stage (that is the optional Nonce
 			// guard's job downstream). Values are sanitized on read.
 			// phpcs:disable WordPress.Security.NonceVerification.Missing
-			'sss_website_url' => sanitize_text_field( wp_unslash( $_POST['sss_website_url'] ?? '' ) ),
-			'sss_nonce'       => sanitize_text_field( wp_unslash( $_POST['sss_nonce'] ?? '' ) ),
-			'sss_form_loaded' => sanitize_text_field( wp_unslash( $_POST['sss_form_loaded'] ?? '' ) ),
+			'simple_spam_shield_website_url' => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_website_url'] ?? '' ) ),
+			'simple_spam_shield_nonce'       => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_nonce'] ?? '' ) ),
+			'simple_spam_shield_form_loaded' => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_form_loaded'] ?? '' ) ),
 			// phpcs:enable WordPress.Security.NonceVerification.Missing
 		];
 

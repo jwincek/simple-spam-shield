@@ -10,7 +10,7 @@
 ( function () {
 	'use strict';
 
-	if ( typeof sssGuard === 'undefined' ) {
+	if ( typeof simpleSpamShieldGuard === 'undefined' ) {
 		return;
 	}
 
@@ -51,45 +51,45 @@
 	 * Inject hidden fields into a form.
 	 */
 	function injectFields( form ) {
-		if ( form.dataset.sssProtected ) {
+		if ( form.dataset.simpleSpamShieldProtected ) {
 			return;
 		}
-		form.dataset.sssProtected = '1';
+		form.dataset.simpleSpamShieldProtected = '1';
 
 		// Honeypot field — looks like a legitimate "website" field to bots.
 		var hp = document.createElement( 'div' );
-		hp.className = 'sss-hp-wrap';
+		hp.className = 'simple-spam-shield-hp-wrap';
 		hp.setAttribute( 'aria-hidden', 'true' );
 		hp.innerHTML =
-			'<label for="sss_website_url">Website</label>' +
-			'<input type="text" name="sss_website_url" id="sss_website_url" value="" tabindex="-1" autocomplete="off">';
+			'<label for="simple_spam_shield_website_url">Website</label>' +
+			'<input type="text" name="simple_spam_shield_website_url" id="simple_spam_shield_website_url" value="" tabindex="-1" autocomplete="off">';
 		form.appendChild( hp );
 
 		// Nonce field.
 		var nonce = document.createElement( 'input' );
 		nonce.type  = 'hidden';
-		nonce.name  = 'sss_nonce';
-		nonce.value = sssGuard.nonce;
+		nonce.name  = 'simple_spam_shield_nonce';
+		nonce.value = simpleSpamShieldGuard.nonce;
 		form.appendChild( nonce );
 
 		// Timestamp field — generated client-side so page caching
 		// cannot produce a stale value that breaks the time gate.
 		var ts = document.createElement( 'input' );
 		ts.type  = 'hidden';
-		ts.name  = 'sss_form_loaded';
+		ts.name  = 'simple_spam_shield_form_loaded';
 		ts.value = Math.floor( Date.now() / 1000 );
 		form.appendChild( ts );
 
 		// Behavioral data field — populated at submit time.
 		var bd = document.createElement( 'input' );
 		bd.type  = 'hidden';
-		bd.name  = 'sss_behavioral_data';
+		bd.name  = 'simple_spam_shield_behavioral_data';
 		bd.value = '';
 		form.appendChild( bd );
 
 		// Capture behavioral data just before form submission.
 		form.addEventListener( 'submit', function () {
-			var field = form.querySelector( 'input[name="sss_behavioral_data"]' );
+			var field = form.querySelector( 'input[name="simple_spam_shield_behavioral_data"]' );
 			if ( field ) {
 				field.value = getBehavioralData();
 			}

@@ -2,7 +2,7 @@
 /**
  * Keyword Block guard — rejects submissions containing blocked keywords.
  *
- * Keywords are stored one per line in the sss_blocked_keywords option.
+ * Keywords are stored one per line in the simple_spam_shield_blocked_keywords option.
  * Each keyword is matched case-insensitively as a whole word boundary.
  *
  * @package Simple_Spam_Shield
@@ -10,12 +10,12 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Guards;
+namespace Simple_Spam_Shield\Guards;
 
 final class Keyword_Block extends Abstract_Guard {
 
 	public function check( array $data, string $context ): \WP_Error|true {
-		$keywords_raw = get_option( 'sss_blocked_keywords', '' );
+		$keywords_raw = get_option( 'simple_spam_shield_blocked_keywords', '' );
 
 		if ( empty( $keywords_raw ) ) {
 			return true;

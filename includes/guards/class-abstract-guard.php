@@ -7,7 +7,7 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Guards;
+namespace Simple_Spam_Shield\Guards;
 
 abstract class Abstract_Guard implements Guard_Interface {
 
@@ -28,7 +28,7 @@ abstract class Abstract_Guard implements Guard_Interface {
 	}
 
 	public function is_enabled(): bool {
-		return (bool) get_option( "sss_{$this->slug}_enabled", $this->config['enabled_by_default'] ?? true );
+		return (bool) get_option( "simple_spam_shield_{$this->slug}_enabled", $this->config['enabled_by_default'] ?? true );
 	}
 
 	/**
@@ -36,7 +36,7 @@ abstract class Abstract_Guard implements Guard_Interface {
 	 */
 	protected function fail( string $message ): \WP_Error {
 		return new \WP_Error(
-			"sss_{$this->slug}_failed",
+			"simple_spam_shield_{$this->slug}_failed",
 			$message,
 			[ 'status' => 403 ]
 		);

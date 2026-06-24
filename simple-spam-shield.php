@@ -19,22 +19,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants.
-define( 'SSS_VERSION', '1.0.0' );
-define( 'SSS_FILE', __FILE__ );
-define( 'SSS_DIR', plugin_dir_path( __FILE__ ) );
-define( 'SSS_URL', plugin_dir_url( __FILE__ ) );
+define( 'SIMPLE_SPAM_SHIELD_VERSION', '1.0.0' );
+define( 'SIMPLE_SPAM_SHIELD_FILE', __FILE__ );
+define( 'SIMPLE_SPAM_SHIELD_DIR', plugin_dir_path( __FILE__ ) );
+define( 'SIMPLE_SPAM_SHIELD_URL', plugin_dir_url( __FILE__ ) );
 
-// Autoload namespaced classes, e.g. SSS\Core\Config maps to includes/core/class-config.php.
+// Autoload namespaced classes, e.g. Simple_Spam_Shield\Core\Config maps to includes/core/class-config.php.
 spl_autoload_register( function ( string $class ): void {
-	if ( ! str_starts_with( $class, 'SSS\\' ) ) {
+	if ( ! str_starts_with( $class, 'Simple_Spam_Shield\\' ) ) {
 		return;
 	}
 
-	$relative = substr( $class, strlen( 'SSS\\' ) );
+	$relative = substr( $class, strlen( 'Simple_Spam_Shield\\' ) );
 	$parts    = explode( '\\', $relative );
 	$name     = array_pop( $parts );
 	$dir      = strtolower( implode( '/', $parts ) );
-	$file     = SSS_DIR . 'includes/' . $dir . '/class-' . strtolower( str_replace( '_', '-', $name ) ) . '.php';
+	$file     = SIMPLE_SPAM_SHIELD_DIR . 'includes/' . $dir . '/class-' . strtolower( str_replace( '_', '-', $name ) ) . '.php';
 
 	if ( file_exists( $file ) ) {
 		require_once $file;
@@ -45,21 +45,21 @@ spl_autoload_register( function ( string $class ): void {
  * Plugin activation — set default options.
  */
 register_activation_hook( __FILE__, function (): void {
-	\SSS\Core\Config::init( SSS_DIR . 'config/' );
+	\Simple_Spam_Shield\Core\Config::init( SIMPLE_SPAM_SHIELD_DIR . 'config/' );
 
-	$defaults = \SSS\Core\Config::get( 'settings', 'defaults', [] );
+	$defaults = \Simple_Spam_Shield\Core\Config::get( 'settings', 'defaults', [] );
 	foreach ( $defaults as $key => $value ) {
-		if ( false === get_option( "sss_{$key}" ) ) {
-			add_option( "sss_{$key}", $value );
+		if ( false === get_option( "simple_spam_shield_{$key}" ) ) {
+			add_option( "simple_spam_shield_{$key}", $value );
 		}
 	}
 
 	// Create the spam logs database table.
-	\SSS\Core\Database_Manager::create_table();
+	\Simple_Spam_Shield\Core\Database_Manager::create_table();
 
 	// Schedule the daily log-retention purge.
-	if ( ! wp_next_scheduled( 'sss_purge_logs' ) ) {
-		wp_schedule_event( time(), 'daily', 'sss_purge_logs' );
+	if ( ! wp_next_scheduled( 'simple_spam_shield_purge_logs' ) ) {
+		wp_schedule_event( time(), 'daily', 'simple_spam_shield_purge_logs' );
 	}
 } );
 
@@ -67,46 +67,46 @@ register_activation_hook( __FILE__, function (): void {
  * Plugin deactivation — clean up transients and scheduled events.
  */
 register_deactivation_hook( __FILE__, function (): void {
-	delete_transient( 'sss_stats' );
-	wp_clear_scheduled_hook( 'sss_purge_logs' );
+	delete_transient( 'simple_spam_shield_stats' );
+	wp_clear_scheduled_hook( 'simple_spam_shield_purge_logs' );
 } );
 
 /**
  * Daily cron callback — prune log rows older than the retention window.
  */
-function sss_purge_logs(): void {
-	$days = (int) get_option( 'sss_log_retention_days', 30 );
-	\SSS\Core\Database_Manager::purge_older_than( $days );
+function simple_spam_shield_purge_logs(): void {
+	$days = (int) get_option( 'simple_spam_shield_log_retention_days', 30 );
+	\Simple_Spam_Shield\Core\Database_Manager::purge_older_than( $days );
 }
-add_action( 'sss_purge_logs', 'sss_purge_logs' );
+add_action( 'simple_spam_shield_purge_logs', 'simple_spam_shield_purge_logs' );
 
 /**
  * Initialize the plugin on plugins_loaded.
  */
-function sss_init(): void {
+function simple_spam_shield_init(): void {
 	// 1. Config loader.
-	\SSS\Core\Config::init( SSS_DIR . 'config/' );
+	\Simple_Spam_Shield\Core\Config::init( SIMPLE_SPAM_SHIELD_DIR . 'config/' );
 
 	// 2. Guard pipeline (the "abilities" layer).
-	\SSS\Core\Guard_Runner::init();
+	\Simple_Spam_Shield\Core\Guard_Runner::init();
 
 	// 3. Integration hooks — thin consumers that delegate to the guard pipeline.
-	\SSS\Integrations\Comments::init();
-	\SSS\Integrations\WooCommerce::init();
-	\SSS\Integrations\Jetpack_Forms::init();
+	\Simple_Spam_Shield\Integrations\Comments::init();
+	\Simple_Spam_Shield\Integrations\WooCommerce::init();
+	\Simple_Spam_Shield\Integrations\Jetpack_Forms::init();
 
 	// 4. Front-end assets (honeypot field + JS timer).
-	add_action( 'wp_enqueue_scripts', [ \SSS\Core\Assets::class, 'enqueue' ] );
+	add_action( 'wp_enqueue_scripts', [ \Simple_Spam_Shield\Core\Assets::class, 'enqueue' ] );
 
 	// 5. Admin settings (admin only).
 	if ( is_admin() ) {
-		\SSS\Core\Admin::init();
+		\Simple_Spam_Shield\Core\Admin::init();
 	}
 
 	// 6. Self-heal the retention cron for installs that predate it
 	// (the activation hook only fires on (re)activation).
-	if ( ! wp_next_scheduled( 'sss_purge_logs' ) ) {
-		wp_schedule_event( time(), 'daily', 'sss_purge_logs' );
+	if ( ! wp_next_scheduled( 'simple_spam_shield_purge_logs' ) ) {
+		wp_schedule_event( time(), 'daily', 'simple_spam_shield_purge_logs' );
 	}
 }
-add_action( 'plugins_loaded', 'sss_init' );
+add_action( 'plugins_loaded', 'simple_spam_shield_init' );

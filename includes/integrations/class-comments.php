@@ -11,9 +11,9 @@
 
 declare( strict_types=1 );
 
-namespace SSS\Integrations;
+namespace Simple_Spam_Shield\Integrations;
 
-use SSS\Core\Guard_Runner;
+use Simple_Spam_Shield\Core\Guard_Runner;
 
 final class Comments {
 
@@ -21,7 +21,7 @@ final class Comments {
 	 * Register hooks.
 	 */
 	public static function init(): void {
-		if ( ! (bool) get_option( 'sss_protect_comments', true ) ) {
+		if ( ! (bool) get_option( 'simple_spam_shield_protect_comments', true ) ) {
 			return;
 		}
 
@@ -71,9 +71,9 @@ final class Comments {
 			// plugin nonce to verify at this stage (that is the optional Nonce
 			// guard's job downstream). Values are sanitized on read.
 			// phpcs:disable WordPress.Security.NonceVerification.Missing
-			'sss_website_url' => sanitize_text_field( wp_unslash( $_POST['sss_website_url'] ?? '' ) ),
-			'sss_nonce'       => sanitize_text_field( wp_unslash( $_POST['sss_nonce'] ?? '' ) ),
-			'sss_form_loaded' => sanitize_text_field( wp_unslash( $_POST['sss_form_loaded'] ?? '' ) ),
+			'simple_spam_shield_website_url' => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_website_url'] ?? '' ) ),
+			'simple_spam_shield_nonce'       => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_nonce'] ?? '' ) ),
+			'simple_spam_shield_form_loaded' => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_form_loaded'] ?? '' ) ),
 			// phpcs:enable WordPress.Security.NonceVerification.Missing
 		];
 	}
