@@ -53,21 +53,26 @@ if ( ! function_exists( 'simple_spam_shield_check' ) ) {
 		// Hidden protection fields: prefer a value the caller passed in $fields
 		// (e.g. a REST handler reading $request->get_params(), where $_POST is
 		// empty for a JSON body), falling back to the form-POST superglobal.
-		$pick = static function ( string $key ) use ( $fields ) {
-			if ( array_key_exists( $key, $fields ) ) {
-				return (string) $fields[ $key ];
-			}
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Anti-spam read of a submission field; sanitized below.
-			return wp_unslash( (string) ( $_POST[ $key ] ?? '' ) );
-		};
+		// Each branch sanitizes at the point of access.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Anti-spam check on a third-party submission; values are sanitized on read.
+		$website    = isset( $fields['simple_spam_shield_website_url'] )
+			? sanitize_text_field( (string) $fields['simple_spam_shield_website_url'] )
+			: sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_website_url'] ?? '' ) );
+		$token      = isset( $fields['simple_spam_shield_form_loaded'] )
+			? sanitize_text_field( (string) $fields['simple_spam_shield_form_loaded'] )
+			: sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_form_loaded'] ?? '' ) );
+		$behavioral = isset( $fields['simple_spam_shield_behavioral_data'] )
+			? sanitize_textarea_field( (string) $fields['simple_spam_shield_behavioral_data'] )
+			: sanitize_textarea_field( wp_unslash( $_POST['simple_spam_shield_behavioral_data'] ?? '' ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		$data = array(
 			'content'                            => isset( $fields['content'] ) ? (string) $fields['content'] : '',
 			'author'                             => isset( $fields['author'] ) ? (string) $fields['author'] : '',
 			'email'                              => isset( $fields['email'] ) ? (string) $fields['email'] : '',
-			'simple_spam_shield_website_url'     => sanitize_text_field( $pick( 'simple_spam_shield_website_url' ) ),
-			'simple_spam_shield_form_loaded'     => sanitize_text_field( $pick( 'simple_spam_shield_form_loaded' ) ),
-			'simple_spam_shield_behavioral_data' => sanitize_textarea_field( $pick( 'simple_spam_shield_behavioral_data' ) ),
+			'simple_spam_shield_website_url'     => $website,
+			'simple_spam_shield_form_loaded'     => $token,
+			'simple_spam_shield_behavioral_data' => $behavioral,
 		);
 
 		return \Simple_Spam_Shield\Core\Guard_Runner::run( $data, $context );
