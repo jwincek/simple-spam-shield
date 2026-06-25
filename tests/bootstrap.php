@@ -40,6 +40,27 @@ if ( ! function_exists( 'add_option' ) ) {
 	}
 }
 
+// --- In-memory transient store ---------------------------------------------
+$GLOBALS['sss_test_transients'] = [];
+
+if ( ! function_exists( 'get_transient' ) ) {
+	function get_transient( $key ) {
+		return $GLOBALS['sss_test_transients'][ $key ] ?? false;
+	}
+}
+if ( ! function_exists( 'set_transient' ) ) {
+	function set_transient( $key, $value, $expiration = 0 ) {
+		$GLOBALS['sss_test_transients'][ $key ] = $value;
+		return true;
+	}
+}
+if ( ! function_exists( 'delete_transient' ) ) {
+	function delete_transient( $key ) {
+		unset( $GLOBALS['sss_test_transients'][ $key ] );
+		return true;
+	}
+}
+
 // --- Misc WP helpers -------------------------------------------------------
 if ( ! function_exists( '__' ) ) {
 	function __( $text, $domain = 'default' ) {
