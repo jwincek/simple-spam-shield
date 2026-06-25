@@ -41,6 +41,9 @@ spl_autoload_register( function ( string $class ): void {
 	}
 } );
 
+// Public integration API for other plugins (prefixed global functions).
+require_once SIMPLE_SPAM_SHIELD_DIR . 'includes/api.php';
+
 /**
  * Plugin activation — set default options.
  */

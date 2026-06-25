@@ -81,6 +81,45 @@ Blocked submissions are logged to a custom database table (`wp_simple_spam_shiel
 
 When the plugin is deleted (not just deactivated), `uninstall.php` drops the custom database table, removes all `simple_spam_shield_*` options, and purges duplicate-detection transients.
 
+## Protecting another plugin's forms
+
+Other plugins can run their own form submissions through Simple Spam Shield's guards via a small, stable public API (`includes/api.php`). Integrate through these prefixed functions — not the internal classes — and wrap calls in `function_exists()` so your plugin degrades gracefully when Simple Spam Shield is inactive.
+
+**1. Check a submission (server side).** Pass the human-meaningful fields; the hidden honeypot/token/behavioral fields are read from `$_POST` automatically. Returns `true` or a `WP_Error`.
+
+```php
+if ( function_exists( 'simple_spam_shield_check' ) ) {
+    $result = simple_spam_shield_check(
+        array( 'content' => $message, 'author' => $name, 'email' => $email ),
+        'acme_contact_form' // a label for your form; shows up in the spam log
+    );
+    if ( is_wp_error( $result ) ) {
+        // Reject, mark as spam, etc.
+        wp_die( esc_html( $result->get_error_message() ) );
+    }
+}
+```
+
+**2. Add the hidden fields to your form** so the JS-dependent guards (honeypot, time gate, signature, behavioral) have data. Either register your form's selector — the front-end script then injects the fields for you:
+
+```php
+add_action( 'wp_enqueue_scripts', function () {
+    if ( function_exists( 'simple_spam_shield_protect_selector' ) ) {
+        simple_spam_shield_protect_selector( '#acme-contact-form' );
+    }
+} );
+```
+
+…or render the fields inline in your form template:
+
+```php
+if ( function_exists( 'simple_spam_shield_field_markup' ) ) {
+    echo simple_spam_shield_field_markup(); // already escaped
+}
+```
+
+Without step 2, only the content-based guards (keyword, link limit, duplicate) apply.
+
 ## Lineage
 
 The plugin's architecture draws from two sources:

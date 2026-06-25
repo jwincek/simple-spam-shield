@@ -82,6 +82,29 @@ if ( ! function_exists( 'esc_html__' ) ) {
 		return $text;
 	}
 }
+if ( ! function_exists( 'esc_attr' ) ) {
+	function esc_attr( $text ) {
+		return $text;
+	}
+}
+
+// --- In-memory filter registry ---------------------------------------------
+$GLOBALS['simple_spam_shield_test_filters'] = [];
+
+if ( ! function_exists( 'add_filter' ) ) {
+	function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
+		$GLOBALS['simple_spam_shield_test_filters'][ $hook ][] = $callback;
+		return true;
+	}
+}
+if ( ! function_exists( 'apply_filters' ) ) {
+	function apply_filters( $hook, $value, ...$args ) {
+		foreach ( $GLOBALS['simple_spam_shield_test_filters'][ $hook ] ?? [] as $callback ) {
+			$value = $callback( $value, ...$args );
+		}
+		return $value;
+	}
+}
 if ( ! function_exists( 'wp_die' ) ) {
 	function wp_die( $message = '', $title = '', $args = [] ) {
 		// Throw instead of exiting so tests can assert the hard-block path.
@@ -162,3 +185,6 @@ spl_autoload_register( function ( $class ) {
 		require_once $file;
 	}
 } );
+
+// Public API functions (not autoloaded — they are plain global functions).
+require_once SIMPLE_SPAM_SHIELD_PLUGIN_ROOT . '/includes/api.php';

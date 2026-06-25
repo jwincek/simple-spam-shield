@@ -66,15 +66,16 @@ final class WooCommerce {
 		}
 
 		$data = [
-			'content'                        => $comment->comment_content ?? '',
-			'author'                         => $comment->comment_author ?? '',
-			'email'                          => $comment->comment_author_email ?? '',
+			'content'                            => $comment->comment_content ?? '',
+			'author'                             => $comment->comment_author ?? '',
+			'email'                              => $comment->comment_author_email ?? '',
 			// JS-injected fields from a public form submission; there is no
 			// plugin nonce to verify at this stage (that is the optional Nonce
 			// guard's job downstream). Values are sanitized on read.
 			// phpcs:disable WordPress.Security.NonceVerification.Missing
-			'simple_spam_shield_website_url' => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_website_url'] ?? '' ) ),
-			'simple_spam_shield_form_loaded' => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_form_loaded'] ?? '' ) ),
+			'simple_spam_shield_website_url'     => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_website_url'] ?? '' ) ),
+			'simple_spam_shield_form_loaded'     => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_form_loaded'] ?? '' ) ),
+			'simple_spam_shield_behavioral_data' => sanitize_textarea_field( wp_unslash( $_POST['simple_spam_shield_behavioral_data'] ?? '' ) ),
 			// phpcs:enable WordPress.Security.NonceVerification.Missing
 		];
 

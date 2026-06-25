@@ -14,12 +14,13 @@
 		return;
 	}
 
-	var selectors = [
-		'#commentform',                         // WP Comments.
-		'#review_form form',                    // WooCommerce Reviews.
-		'.wp-block-jetpack-contact-form form',  // Jetpack Contact Form blocks.
-		'.jetpack-contact-form form',           // Jetpack legacy class.
-	];
+	// Built-ins plus any selectors registered by other plugins via the
+	// simple_spam_shield_form_selectors filter.
+	var selectors = simpleSpamShieldGuard.selectors || [];
+
+	// Forms rendered by simple_spam_shield_field_markup() already carry this
+	// honeypot field; we enhance them too (behavioral handler, missing fields).
+	var HONEYPOT_NAME = 'simple_spam_shield_website_url';
 
 	// --- Behavioral analysis tracking ---
 	// Ported from Comment & Form Guard.
@@ -50,6 +51,21 @@
 	/**
 	 * Inject hidden fields into a form.
 	 */
+	function hasField( form, name ) {
+		return !! form.querySelector( 'input[name="' + name + '"]' );
+	}
+
+	function addHidden( form, name, value ) {
+		if ( hasField( form, name ) ) {
+			return; // Already present (e.g. server-rendered) — leave it.
+		}
+		var input = document.createElement( 'input' );
+		input.type  = 'hidden';
+		input.name  = name;
+		input.value = value;
+		form.appendChild( input );
+	}
+
 	function injectFields( form ) {
 		if ( form.dataset.simpleSpamShieldProtected ) {
 			return;
@@ -57,29 +73,24 @@
 		form.dataset.simpleSpamShieldProtected = '1';
 
 		// Honeypot field — looks like a legitimate "website" field to bots.
-		var hp = document.createElement( 'div' );
-		hp.className = 'simple-spam-shield-hp-wrap';
-		hp.setAttribute( 'aria-hidden', 'true' );
-		hp.innerHTML =
-			'<label for="simple_spam_shield_website_url">Website</label>' +
-			'<input type="text" name="simple_spam_shield_website_url" id="simple_spam_shield_website_url" value="" tabindex="-1" autocomplete="off">';
-		form.appendChild( hp );
+		// Skipped when the form already carries one (server-rendered markup).
+		if ( ! hasField( form, HONEYPOT_NAME ) ) {
+			var hp = document.createElement( 'div' );
+			hp.className = 'simple-spam-shield-hp-wrap';
+			hp.setAttribute( 'aria-hidden', 'true' );
+			hp.innerHTML =
+				'<label for="simple_spam_shield_website_url">Website</label>' +
+				'<input type="text" name="simple_spam_shield_website_url" id="simple_spam_shield_website_url" value="" tabindex="-1" autocomplete="off">';
+			form.appendChild( hp );
+		}
 
-		// Signed token — carries the server-issued, HMAC-signed timestamp.
-		// The time gate reads the signed issue time and the signature guard
-		// verifies authenticity, so a stale/forged value cannot pass.
-		var token = document.createElement( 'input' );
-		token.type  = 'hidden';
-		token.name  = 'simple_spam_shield_form_loaded';
-		token.value = simpleSpamShieldGuard.token;
-		form.appendChild( token );
+		// Signed token — the server-issued, HMAC-signed timestamp. The time
+		// gate reads the signed issue time and the signature guard verifies
+		// authenticity, so a stale/forged value cannot pass.
+		addHidden( form, 'simple_spam_shield_form_loaded', simpleSpamShieldGuard.token );
 
 		// Behavioral data field — populated at submit time.
-		var bd = document.createElement( 'input' );
-		bd.type  = 'hidden';
-		bd.name  = 'simple_spam_shield_behavioral_data';
-		bd.value = '';
-		form.appendChild( bd );
+		addHidden( form, 'simple_spam_shield_behavioral_data', '' );
 
 		// Capture behavioral data just before form submission.
 		form.addEventListener( 'submit', function () {
@@ -91,12 +102,19 @@
 	}
 
 	/**
-	 * Find and protect all matching forms.
+	 * Find and protect all matching forms, plus any form already carrying the
+	 * honeypot field (rendered server-side via field_markup()).
 	 */
 	function protectForms() {
 		selectors.forEach( function ( selector ) {
-			var forms = document.querySelectorAll( selector );
-			forms.forEach( injectFields );
+			document.querySelectorAll( selector ).forEach( injectFields );
+		} );
+
+		document.querySelectorAll( 'input[name="' + HONEYPOT_NAME + '"]' ).forEach( function ( input ) {
+			var form = input.closest( 'form' );
+			if ( form ) {
+				injectFields( form );
+			}
 		} );
 	}
 

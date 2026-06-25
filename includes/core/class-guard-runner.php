@@ -25,6 +25,8 @@ final class Guard_Runner {
 	 * Initialize: register all guards defined in config/guards.json.
 	 */
 	public static function init(): void {
+		self::$guards = []; // Idempotent: re-initializing replaces, never appends.
+
 		$definitions = Config::get( 'guards', 'guards', [] );
 
 		$guard_map = [
@@ -79,7 +81,7 @@ final class Guard_Runner {
 			$result = $guard->check( $data, $context );
 
 			if ( is_wp_error( $result ) ) {
-				self::log_block( $guard->get_slug(), $context, $result->get_error_message() );
+				self::log_block( $guard->get_slug(), $context, $result->get_error_message(), $data );
 				return $result;
 			}
 		}
@@ -89,25 +91,29 @@ final class Guard_Runner {
 
 	/**
 	 * Log a blocked submission to the custom database table.
+	 *
+	 * @param string $guard   Slug of the guard that blocked the submission.
+	 * @param string $context Form context.
+	 * @param string $reason  Human-readable block reason.
+	 * @param array  $data    Normalized submission data (provides the content).
 	 */
-	private static function log_block( string $guard, string $context, string $reason ): void {
+	private static function log_block( string $guard, string $context, string $reason, array $data ): void {
 		if ( ! (bool) get_option( 'simple_spam_shield_log_blocked', true ) ) {
 			return;
 		}
 
-		// Capturing the rejected submission for the admin log. This runs while
-		// blocking a public form post that carries no plugin nonce; the values
-		// are sanitized here and only ever rendered escaped in the log table.
-		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		// The content comes from the normalized submission data so the log
+		// works for any form (comments, reviews, Jetpack, or a third-party
+		// form via simple_spam_shield_check()). It is escaped on insert and
+		// only ever rendered escaped in the log table.
 		Database_Manager::insert( [
 			'guard'      => $guard,
 			'context'    => $context,
 			'reason'     => $reason,
-			'content'    => sanitize_textarea_field( wp_unslash( $_POST['comment'] ?? $_POST['comment_content'] ?? '' ) ),
+			'content'    => (string) ( $data['content'] ?? '' ),
 			'ip_address' => Request::ip(),
 			'user_agent' => sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ),
 		] );
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
 	}
 
 	/**
