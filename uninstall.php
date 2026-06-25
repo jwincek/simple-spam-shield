@@ -19,7 +19,7 @@ global $wpdb;
 
 // 1. Drop the custom spam logs database table.
 $simple_spam_shield_table_name = $wpdb->prefix . 'simple_spam_shield_spam_logs';
-$wpdb->query( "DROP TABLE IF EXISTS {$simple_spam_shield_table_name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table identifier cannot be a prepared placeholder; value is the plugin's own prefixed table name.
+$wpdb->query( "DROP TABLE IF EXISTS {$simple_spam_shield_table_name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table identifier cannot be a prepared placeholder; value is the plugin's own prefixed table name.
 
 // 2. Delete all plugin options.
 $simple_spam_shield_options = [

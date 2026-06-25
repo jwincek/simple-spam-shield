@@ -318,6 +318,27 @@ final class Admin {
 				esc_html__( 'Clear all logs', 'simple-spam-shield' ) . '</a>';
 		}
 
+		// 7-day blocked-submission summary (cached).
+		$stats = Database_Manager::get_stats();
+		if ( $stats['week_total'] > 0 ) {
+			echo '<p class="description">';
+			printf(
+				/* translators: %d: number of submissions blocked in the last 7 days. */
+				esc_html__( 'Blocked in the last 7 days: %d.', 'simple-spam-shield' ),
+				absint( $stats['week_total'] )
+			);
+			if ( '' !== $stats['top_guard'] ) {
+				echo ' ';
+				printf(
+					/* translators: 1: guard name, 2: number of blocks by that guard. */
+					esc_html__( 'Most active guard: %1$s (%2$d).', 'simple-spam-shield' ),
+					esc_html( $stats['top_guard'] ),
+					absint( $stats['top_count'] )
+				);
+			}
+			echo '</p>';
+		}
+
 		echo '<form method="get">';
 		echo '<input type="hidden" name="page" value="simple-spam-shield-spam-logs">';
 		$table->display();

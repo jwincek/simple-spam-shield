@@ -15,8 +15,9 @@ namespace Simple_Spam_Shield\Core;
 
 final class Database_Manager {
 
-	private const DB_VERSION     = '1.0';
+	private const DB_VERSION     = '1.1';
 	private const DB_VERSION_KEY = 'simple_spam_shield_db_version';
+	private const STATS_KEY      = 'simple_spam_shield_stats';
 
 	/**
 	 * Get the full table name with prefix.
@@ -51,7 +52,9 @@ final class Database_Manager {
 			ip_address varchar(100) NOT NULL,
 			user_agent varchar(255) NOT NULL,
 			PRIMARY KEY  (id),
-			KEY blocked_at (blocked_at)
+			KEY blocked_at (blocked_at),
+			KEY guard (guard),
+			KEY context (context)
 		) {$charset_collate};";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -85,15 +88,42 @@ final class Database_Manager {
 	}
 
 	/**
-	 * Get spam log entries with pagination.
+	 * Build the optional WHERE clause and bound parameters for a filtered
+	 * log query. Only the guard and context columns can be filtered, both
+	 * via prepared %s placeholders.
+	 *
+	 * @param array $filters Associative filters: 'guard' and/or 'context'.
+	 * @return array{0:string,1:array} [ where-clause, bound params ].
+	 */
+	public static function build_filter( array $filters ): array {
+		$clauses = [];
+		$params  = [];
+
+		if ( ! empty( $filters['guard'] ) ) {
+			$clauses[] = 'guard = %s';
+			$params[]  = (string) $filters['guard'];
+		}
+		if ( ! empty( $filters['context'] ) ) {
+			$clauses[] = 'context = %s';
+			$params[]  = (string) $filters['context'];
+		}
+
+		$where = $clauses ? ' WHERE ' . implode( ' AND ', $clauses ) : '';
+
+		return [ $where, $params ];
+	}
+
+	/**
+	 * Get spam log entries with pagination and optional filtering.
 	 *
 	 * @param int    $per_page Items per page.
 	 * @param int    $offset   Offset for pagination.
 	 * @param string $orderby  Column to sort by.
 	 * @param string $order    ASC or DESC.
+	 * @param array  $filters  Optional guard/context filters.
 	 * @return array Array of row objects.
 	 */
-	public static function get_logs( int $per_page = 20, int $offset = 0, string $orderby = 'blocked_at', string $order = 'DESC' ): array {
+	public static function get_logs( int $per_page = 20, int $offset = 0, string $orderby = 'blocked_at', string $order = 'DESC', array $filters = [] ): array {
 		global $wpdb;
 
 		$table = self::table_name();
@@ -105,21 +135,114 @@ final class Database_Manager {
 		}
 		$order = strtoupper( $order ) === 'ASC' ? 'ASC' : 'DESC';
 
+		[ $where, $params ] = self::build_filter( $filters );
+		$params[]           = $per_page;
+		$params[]           = $offset;
+
+		// Table/ORDER BY are interpolated from whitelisted values; the %s/%d
+		// placeholders live in the prepared $where fragment and the variadic
+		// $params spread, which the static sniffs cannot follow.
+		// phpcs:disable WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		return $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL
-				$per_page,
-				$offset
+				"SELECT * FROM {$table}{$where} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d",
+				...$params
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders, PluginCheck.Security.DirectDB.UnescapedDBParameter
 	}
 
 	/**
-	 * Get the total count of log entries.
+	 * Get the total count of log entries, optionally filtered.
+	 *
+	 * @param array $filters Optional guard/context filters.
+	 * @return int
 	 */
-	public static function get_count(): int {
+	public static function get_count( array $filters = [] ): int {
 		global $wpdb;
-		return (int) $wpdb->get_var( 'SELECT COUNT(id) FROM ' . self::table_name() ); // phpcs:ignore WordPress.DB.PreparedSQL
+
+		$table              = self::table_name();
+		[ $where, $params ] = self::build_filter( $filters );
+
+		if ( empty( $params ) ) {
+			return (int) $wpdb->get_var( "SELECT COUNT(id) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL
+		}
+
+		// The %s placeholders live in the prepared $where fragment from
+		// build_filter(); the table name is the plugin's own.
+		// phpcs:disable WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(id) FROM {$table}{$where}",
+				...$params
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders, PluginCheck.Security.DirectDB.UnescapedDBParameter
+	}
+
+	/**
+	 * Get the distinct values present in a filterable column.
+	 *
+	 * @param string $column One of 'guard' or 'context'.
+	 * @return string[]
+	 */
+	public static function distinct_values( string $column ): array {
+		if ( ! in_array( $column, [ 'guard', 'context' ], true ) ) {
+			return [];
+		}
+
+		global $wpdb;
+		$table = self::table_name();
+
+		// $column is whitelisted above; identifiers cannot be placeholders.
+		return $wpdb->get_col( "SELECT DISTINCT {$column} FROM {$table} ORDER BY {$column} ASC" ); // phpcs:ignore WordPress.DB.PreparedSQL, PluginCheck.Security.DirectDB.UnescapedDBParameter
+	}
+
+	/**
+	 * Get cached blocked-submission stats for the last 7 days.
+	 *
+	 * @return array{week_total:int,top_guard:string,top_count:int}
+	 */
+	public static function get_stats(): array {
+		$cached = get_transient( self::STATS_KEY );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		global $wpdb;
+		$table = self::table_name();
+		$since = gmdate( 'Y-m-d H:i:s', time() - WEEK_IN_SECONDS );
+
+		$week_total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(id) FROM {$table} WHERE blocked_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL
+				$since
+			)
+		);
+
+		$top = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT guard, COUNT(id) AS hits FROM {$table} WHERE blocked_at >= %s GROUP BY guard ORDER BY hits DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL
+				$since
+			)
+		);
+
+		$stats = [
+			'week_total' => $week_total,
+			'top_guard'  => $top->guard ?? '',
+			'top_count'  => isset( $top->hits ) ? (int) $top->hits : 0,
+		];
+
+		set_transient( self::STATS_KEY, $stats, 15 * MINUTE_IN_SECONDS );
+
+		return $stats;
+	}
+
+	/**
+	 * Invalidate the cached stats (after a manual clear or purge).
+	 */
+	public static function flush_stats(): void {
+		delete_transient( self::STATS_KEY );
 	}
 
 	/**
@@ -149,12 +272,16 @@ final class Database_Manager {
 		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 		$table        = self::table_name();
 
-		return (int) $wpdb->query(
+		$deleted = (int) $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$table} WHERE id IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table name and %d placeholders are built from a known-safe count of integer IDs.
 				...$ids
 			)
 		);
+
+		self::flush_stats();
+
+		return $deleted;
 	}
 
 	/**
@@ -176,12 +303,16 @@ final class Database_Manager {
 		$table  = self::table_name();
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
 
-		return (int) $wpdb->query(
+		$deleted = (int) $wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$table} WHERE blocked_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL
 				$cutoff
 			)
 		);
+
+		self::flush_stats();
+
+		return $deleted;
 	}
 
 	/**
@@ -189,6 +320,8 @@ final class Database_Manager {
 	 */
 	public static function delete_all(): bool {
 		global $wpdb;
-		return false !== $wpdb->query( 'TRUNCATE TABLE ' . self::table_name() ); // phpcs:ignore WordPress.DB.PreparedSQL
+		$result = false !== $wpdb->query( 'TRUNCATE TABLE ' . self::table_name() ); // phpcs:ignore WordPress.DB.PreparedSQL
+		self::flush_stats();
+		return $result;
 	}
 }

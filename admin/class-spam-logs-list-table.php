@@ -45,6 +45,7 @@ final class Spam_Logs_List_Table extends \WP_List_Table {
 			'reason'     => __( 'Reason', 'simple-spam-shield' ),
 			'content'    => __( 'Content', 'simple-spam-shield' ),
 			'ip_address' => __( 'IP Address', 'simple-spam-shield' ),
+			'user_agent' => __( 'User Agent', 'simple-spam-shield' ),
 		];
 	}
 
@@ -125,6 +126,80 @@ final class Spam_Logs_List_Table extends \WP_List_Table {
 	}
 
 	/**
+	 * User-agent column — truncated, with the full value in a tooltip.
+	 */
+	public function column_user_agent( $item ): string {
+		$agent = (string) $item->user_agent;
+
+		if ( '' === $agent ) {
+			return '—';
+		}
+
+		return sprintf(
+			'<span title="%s">%s</span>',
+			esc_attr( $agent ),
+			esc_html( mb_strimwidth( $agent, 0, 40, '…' ) )
+		);
+	}
+
+	/**
+	 * Render the guard/context filter dropdowns above the table.
+	 *
+	 * @param string $which Tablenav position ('top' or 'bottom').
+	 */
+	protected function extra_tablenav( $which ): void {
+		if ( 'top' !== $which ) {
+			return;
+		}
+
+		// Read-only display filters; whitelisted in the query layer, so no
+		// nonce is required to read them.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$current_guard   = isset( $_GET['filter_guard'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_guard'] ) ) : '';
+		$current_context = isset( $_GET['filter_context'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_context'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		$guards   = Database_Manager::distinct_values( 'guard' );
+		$contexts = Database_Manager::distinct_values( 'context' );
+
+		if ( empty( $guards ) && empty( $contexts ) ) {
+			return;
+		}
+
+		echo '<div class="alignleft actions">';
+
+		echo '<label class="screen-reader-text" for="filter_guard">' . esc_html__( 'Filter by guard', 'simple-spam-shield' ) . '</label>';
+		echo '<select name="filter_guard" id="filter_guard">';
+		echo '<option value="">' . esc_html__( 'All guards', 'simple-spam-shield' ) . '</option>';
+		foreach ( $guards as $guard ) {
+			printf(
+				'<option value="%s"%s>%s</option>',
+				esc_attr( $guard ),
+				selected( $current_guard, $guard, false ),
+				esc_html( $guard )
+			);
+		}
+		echo '</select>';
+
+		echo '<label class="screen-reader-text" for="filter_context">' . esc_html__( 'Filter by context', 'simple-spam-shield' ) . '</label>';
+		echo '<select name="filter_context" id="filter_context">';
+		echo '<option value="">' . esc_html__( 'All contexts', 'simple-spam-shield' ) . '</option>';
+		foreach ( $contexts as $context ) {
+			printf(
+				'<option value="%s"%s>%s</option>',
+				esc_attr( $context ),
+				selected( $current_context, $context, false ),
+				esc_html( $context )
+			);
+		}
+		echo '</select>';
+
+		submit_button( __( 'Filter', 'simple-spam-shield' ), '', 'filter_action', false );
+
+		echo '</div>';
+	}
+
+	/**
 	 * Message when no items exist.
 	 */
 	public function no_items(): void {
@@ -148,16 +223,20 @@ final class Spam_Logs_List_Table extends \WP_List_Table {
 		$current_page = $this->get_pagenum();
 		$offset       = ( $current_page - 1 ) * $per_page;
 
-		// Read-only sort parameters for display; both are whitelisted in
-		// Database_Manager::get_logs(), so no nonce is required to read them.
+		// Read-only sort/filter parameters for display; all are whitelisted
+		// in the query layer, so no nonce is required to read them.
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		$orderby = sanitize_text_field( wp_unslash( $_GET['orderby'] ?? 'blocked_at' ) );
 		$order   = sanitize_text_field( wp_unslash( $_GET['order'] ?? 'DESC' ) );
+		$filters = [
+			'guard'   => isset( $_GET['filter_guard'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_guard'] ) ) : '',
+			'context' => isset( $_GET['filter_context'] ) ? sanitize_text_field( wp_unslash( $_GET['filter_context'] ) ) : '',
+		];
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		$this->items = Database_Manager::get_logs( $per_page, $offset, $orderby, $order );
+		$this->items = Database_Manager::get_logs( $per_page, $offset, $orderby, $order, $filters );
 
-		$total_items = Database_Manager::get_count();
+		$total_items = Database_Manager::get_count( $filters );
 
 		$this->set_pagination_args( [
 			'total_items' => $total_items,
