@@ -26,11 +26,14 @@ final class Nonce extends Abstract_Guard {
 	public function check( array $data, string $context ): \WP_Error|true {
 		$token = (string) ( $data[ self::FIELD ] ?? '' );
 
-		// Jetpack's form processor only forwards recognized form fields, so
-		// our injected token is not present in the data. Skip rather than
-		// hard-fail — other guards still protect the submission.
-		if ( '' === $token && 'jetpack_form' === $context ) {
-			return true;
+		if ( '' === $token ) {
+			// The token is guaranteed only on the built-in comment/review
+			// forms (guard.js injects it). Skip rather than hard-fail
+			// elsewhere — Jetpack strips it, and custom integrations may omit
+			// it; the other guards still protect the submission.
+			return $this->is_js_injected_context( $context )
+				? $this->fail( __( 'Security check failed — please refresh the page and try again.', 'simple-spam-shield' ) )
+				: true;
 		}
 
 		if ( false === \Simple_Spam_Shield\Core\Token::verify( $token ) ) {

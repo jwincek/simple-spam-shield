@@ -4,7 +4,7 @@ Tags: spam, antispam, comments, honeypot, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,10 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 
 == Changelog ==
 
+= 1.0.1 =
+* simple_spam_shield_check() accepts the hidden honeypot/token/behavioral fields explicitly, so REST/AJAX endpoints (JSON body, empty $_POST) can pass them from the request.
+* The time-gate and signature guards skip rather than block when no token is supplied for a custom context, so content-only integrations are not falsely rejected. Built-in comment and review forms still require the token.
+
 = 1.0.0 =
 * Initial release.
 * Guard pipeline: honeypot, duplicate detection, time gate, signature, link limit, keyword block, and optional behavioral analysis.
@@ -95,10 +99,14 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 * Allowlist supporting IPs, CIDR ranges, email addresses, and email domains, with an optional trusted-proxy mode for IP detection.
 * Blocked comments and reviews are routed to the spam queue by default (recoverable), with an option to reject them outright instead.
 * Database-backed logging with a paginated admin viewer and a configurable auto-purge retention window.
+* Public integration API (simple_spam_shield_check / simple_spam_shield_protect_selector / simple_spam_shield_field_markup) so other plugins can protect their own forms.
 * Suggested privacy-policy content and a clean uninstall routine.
 * Developed by Jerome Wincek, with engineering assistance from Anthropic's Claude.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Adds explicit-field support to the integration API for REST/JSON forms and prevents false rejections for content-only integrations.
 
 = 1.0.0 =
 Initial release.

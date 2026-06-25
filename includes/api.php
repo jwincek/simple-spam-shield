@@ -22,18 +22,26 @@ if ( ! function_exists( 'simple_spam_shield_check' ) ) {
 	/**
 	 * Check a form submission against the enabled guards.
 	 *
-	 * The plugin's own hidden fields (honeypot, signed token, behavioral data)
-	 * are read from $_POST automatically; pass only the human-meaningful
-	 * fields. Wrap the call in a function_exists() check so your plugin keeps
-	 * working when Simple Spam Shield is not active.
+	 * For a classic form POST, the plugin's own hidden fields (honeypot, signed
+	 * token, behavioral data) are read from $_POST automatically; pass only the
+	 * human-meaningful fields. For a REST/AJAX endpoint with a JSON body $_POST
+	 * is empty, so pass those fields explicitly from the request, e.g.:
 	 *
-	 *     $result = simple_spam_shield_check(
-	 *         array( 'content' => $message, 'author' => $name, 'email' => $email ),
-	 *         'acme_contact_form'
-	 *     );
-	 *     if ( is_wp_error( $result ) ) { ... }
+	 *     simple_spam_shield_check( array(
+	 *         'content'                        => $message,
+	 *         'author'                         => $name,
+	 *         'email'                          => $email,
+	 *         'simple_spam_shield_website_url' => $request->get_param( 'simple_spam_shield_website_url' ),
+	 *         'simple_spam_shield_form_loaded' => $request->get_param( 'simple_spam_shield_form_loaded' ),
+	 *     ), 'acme_contact_form' );
 	 *
-	 * @param array  $fields  Recognized keys: 'content', 'author', 'email'.
+	 * The time-gate and signature guards skip (rather than block) when their
+	 * token is absent for a custom context, so a content-only integration that
+	 * passes no token still works. Wrap the call in a function_exists() check
+	 * so your plugin keeps working when Simple Spam Shield is not active.
+	 *
+	 * @param array  $fields  Recognized keys: 'content', 'author', 'email', and
+	 *                        optionally the simple_spam_shield_* hidden fields.
 	 * @param string $context A short label for the form type (shown in the log).
 	 * @return true|\WP_Error  True if clean, WP_Error if a guard blocked it.
 	 */
@@ -42,16 +50,25 @@ if ( ! function_exists( 'simple_spam_shield_check' ) ) {
 			return true;
 		}
 
-		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Anti-spam check on a third-party form submission; values are sanitized on read.
+		// Hidden protection fields: prefer a value the caller passed in $fields
+		// (e.g. a REST handler reading $request->get_params(), where $_POST is
+		// empty for a JSON body), falling back to the form-POST superglobal.
+		$pick = static function ( string $key ) use ( $fields ) {
+			if ( array_key_exists( $key, $fields ) ) {
+				return (string) $fields[ $key ];
+			}
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Anti-spam read of a submission field; sanitized below.
+			return wp_unslash( (string) ( $_POST[ $key ] ?? '' ) );
+		};
+
 		$data = array(
 			'content'                            => isset( $fields['content'] ) ? (string) $fields['content'] : '',
 			'author'                             => isset( $fields['author'] ) ? (string) $fields['author'] : '',
 			'email'                              => isset( $fields['email'] ) ? (string) $fields['email'] : '',
-			'simple_spam_shield_website_url'     => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_website_url'] ?? '' ) ),
-			'simple_spam_shield_form_loaded'     => sanitize_text_field( wp_unslash( $_POST['simple_spam_shield_form_loaded'] ?? '' ) ),
-			'simple_spam_shield_behavioral_data' => sanitize_textarea_field( wp_unslash( $_POST['simple_spam_shield_behavioral_data'] ?? '' ) ),
+			'simple_spam_shield_website_url'     => sanitize_text_field( $pick( 'simple_spam_shield_website_url' ) ),
+			'simple_spam_shield_form_loaded'     => sanitize_text_field( $pick( 'simple_spam_shield_form_loaded' ) ),
+			'simple_spam_shield_behavioral_data' => sanitize_textarea_field( $pick( 'simple_spam_shield_behavioral_data' ) ),
 		);
-		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
 		return \Simple_Spam_Shield\Core\Guard_Runner::run( $data, $context );
 	}

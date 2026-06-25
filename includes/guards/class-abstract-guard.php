@@ -41,4 +41,20 @@ abstract class Abstract_Guard implements Guard_Interface {
 			[ 'status' => 403 ]
 		);
 	}
+
+	/**
+	 * Whether the context is a built-in form whose JS-injected fields (token,
+	 * behavioral data) are guaranteed to be present.
+	 *
+	 * For these, a missing field is suspicious and the JS-dependent guards
+	 * hard-fail. For any other context (Jetpack, or a third-party form
+	 * integrated via simple_spam_shield_check()) the field may be legitimately
+	 * absent, so those guards skip rather than block.
+	 *
+	 * @param string $context Submission context.
+	 * @return bool
+	 */
+	protected function is_js_injected_context( string $context ): bool {
+		return in_array( $context, [ 'comment', 'woo_review' ], true );
+	}
 }

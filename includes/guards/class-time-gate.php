@@ -17,31 +17,22 @@ final class Time_Gate extends Abstract_Guard {
 		$token = (string) ( $data['simple_spam_shield_form_loaded'] ?? '' );
 
 		if ( '' === $token ) {
-			// Jetpack's form processor does not forward arbitrary hidden
-			// fields through its pipeline — only recognized form field data
-			// arrives in $form_data. When the token is absent we cannot
-			// measure elapsed time, so we skip rather than hard-fail.
-			// The other guards (honeypot, signature, keywords, link limit)
-			// still protect the submission.
-			if ( 'jetpack_form' === $context ) {
-				return true;
-			}
-
-			return $this->fail(
-				__( 'Submission rejected — please enable JavaScript.', 'simple-spam-shield' )
-			);
+			// The token is guaranteed only on the built-in comment/review
+			// forms (guard.js injects it). When it is absent we cannot measure
+			// elapsed time, so skip rather than hard-fail — Jetpack strips it,
+			// and custom integrations may omit it; the other guards still
+			// protect the submission.
+			return $this->is_js_injected_context( $context )
+				? $this->fail( __( 'Submission rejected — please enable JavaScript.', 'simple-spam-shield' ) )
+				: true;
 		}
 
-		// The issue time is read from the server-signed token, so it cannot
-		// be forged. An invalid signature means the value was tampered with
-		// or did not originate from this site.
+		// A token was supplied, so verify it. The issue time is read from the
+		// server-signed token and cannot be forged; an invalid signature means
+		// the value was tampered with or did not originate from this site.
 		$issued = \Simple_Spam_Shield\Core\Token::verify( $token );
 
 		if ( false === $issued ) {
-			if ( 'jetpack_form' === $context ) {
-				return true;
-			}
-
 			return $this->fail(
 				__( 'Submission rejected — please refresh the page and try again.', 'simple-spam-shield' )
 			);

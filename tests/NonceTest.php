@@ -43,4 +43,8 @@ final class NonceTest extends TestCase {
 	public function test_skips_a_missing_token_on_jetpack(): void {
 		$this->assertTrue( $this->guard()->check( [], 'jetpack_form' ) );
 	}
+
+	public function test_skips_a_missing_token_for_a_custom_context(): void {
+		$this->assertTrue( $this->guard()->check( [], 'rsvp_form' ) );
+	}
 }

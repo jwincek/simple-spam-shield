@@ -100,6 +100,20 @@ if ( function_exists( 'simple_spam_shield_check' ) ) {
 }
 ```
 
+For a **REST or AJAX endpoint with a JSON body**, `$_POST` is empty, so pass the hidden fields explicitly from the request:
+
+```php
+simple_spam_shield_check( array(
+    'content'                        => $request->get_param( 'message' ),
+    'author'                         => $request->get_param( 'name' ),
+    'email'                          => $request->get_param( 'email' ),
+    'simple_spam_shield_website_url' => $request->get_param( 'simple_spam_shield_website_url' ),
+    'simple_spam_shield_form_loaded' => $request->get_param( 'simple_spam_shield_form_loaded' ),
+), 'acme_rest_form' );
+```
+
+The time-gate and signature guards skip (rather than block) when no token is supplied for a custom context, so a **content-only** integration that passes just `content`/`author`/`email` still works — it gets the keyword, link-limit, and duplicate guards without any front-end token plumbing.
+
 **2. Add the hidden fields to your form** so the JS-dependent guards (honeypot, time gate, signature, behavioral) have data. Either register your form's selector — the front-end script then injects the fields for you:
 
 ```php

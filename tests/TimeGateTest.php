@@ -46,4 +46,14 @@ final class TimeGateTest extends TestCase {
 	public function test_blocks_when_token_absent_on_comment(): void {
 		$this->assertInstanceOf( WP_Error::class, $this->guard()->check( [], 'comment' ) );
 	}
+
+	public function test_skips_when_token_absent_for_a_custom_context(): void {
+		// A third-party integration (e.g. an RSVP form) that supplies no token
+		// should not be blocked — only the built-in JS forms hard-fail.
+		$this->assertTrue( $this->guard()->check( [], 'rsvp_form' ) );
+	}
+
+	public function test_blocks_when_token_absent_on_woo_review(): void {
+		$this->assertInstanceOf( WP_Error::class, $this->guard()->check( [], 'woo_review' ) );
+	}
 }

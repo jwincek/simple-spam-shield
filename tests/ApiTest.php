@@ -84,4 +84,42 @@ final class ApiTest extends TestCase {
 		simple_spam_shield_protect_selector( '' );
 		$this->assertNotContains( '', Assets::selectors() );
 	}
+
+	public function test_check_reads_hidden_fields_passed_explicitly(): void {
+		// REST/JSON: $_POST is empty, so the token is passed explicitly.
+		$_POST  = [];
+		$result = simple_spam_shield_check(
+			[
+				'content'                        => 'A perfectly normal note',
+				'simple_spam_shield_website_url' => '',
+				'simple_spam_shield_form_loaded' => $this->valid_token(),
+			],
+			'acme_rest'
+		);
+		$this->assertTrue( $result );
+	}
+
+	public function test_check_blocks_an_explicitly_passed_honeypot(): void {
+		$_POST  = [];
+		$result = simple_spam_shield_check(
+			[
+				'content'                        => 'spam',
+				'simple_spam_shield_website_url' => 'http://bot.example',
+				'simple_spam_shield_form_loaded' => $this->valid_token(),
+			],
+			'acme_rest'
+		);
+		$this->assertInstanceOf( WP_Error::class, $result );
+	}
+
+	public function test_check_content_only_passes_without_a_token(): void {
+		// No token at all (a content-only integration); the token-based guards
+		// skip for a custom context, so a clean submission still passes.
+		$_POST  = [];
+		$result = simple_spam_shield_check(
+			[ 'content' => 'Looking forward to the event', 'email' => 'guest@example.com' ],
+			'rsvp_form'
+		);
+		$this->assertTrue( $result );
+	}
 }

@@ -10,6 +10,18 @@ The user-facing changelog shipped to WordPress.org lives in the
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-06-25
+
+### Changed
+- `simple_spam_shield_check()` now accepts the hidden honeypot/token/behavioral
+  fields explicitly in its `$fields` argument (falling back to `$_POST`), so
+  REST/AJAX endpoints with a JSON body — where `$_POST` is empty — can pass
+  them from the request.
+- The time-gate and signature guards skip (rather than block) when no signed
+  token is supplied for a custom context, so a content-only integration is not
+  falsely rejected. The built-in comment and review forms still hard-fail on a
+  missing token.
+
 ## [1.0.0] - 2026-06-24
 
 Initial release.
@@ -39,6 +51,10 @@ Initial release.
 - Suggested privacy-policy content describing what is logged, and a clean
   uninstall routine that removes the table, options, scheduled task, and
   transients.
+- Public integration API (`includes/api.php`) so other plugins can protect
+  their own forms: `simple_spam_shield_check()`,
+  `simple_spam_shield_protect_selector()`, and `simple_spam_shield_field_markup()`.
 
-[Unreleased]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/jwincek/simple-spam-shield/releases/tag/v1.0.0
