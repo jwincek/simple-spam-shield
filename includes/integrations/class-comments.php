@@ -19,6 +19,8 @@ final class Comments {
 
 	/**
 	 * Whether the current submission was flagged by a guard.
+	 *
+	 * @var bool
 	 */
 	private static bool $flagged = false;
 
@@ -90,9 +92,9 @@ final class Comments {
 	 */
 	private static function normalize( array $commentdata ): array {
 		return [
-			'content'         => $commentdata['comment_content'] ?? '',
-			'author'          => $commentdata['comment_author'] ?? '',
-			'email'           => $commentdata['comment_author_email'] ?? '',
+			'content'                        => $commentdata['comment_content'] ?? '',
+			'author'                         => $commentdata['comment_author'] ?? '',
+			'email'                          => $commentdata['comment_author_email'] ?? '',
 			// JS-injected fields from a public form submission; there is no
 			// plugin nonce to verify at this stage (that is the optional Nonce
 			// guard's job downstream). Values are sanitized on read.

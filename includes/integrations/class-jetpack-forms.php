@@ -84,9 +84,9 @@ final class Jetpack_Forms {
 		}
 
 		return [
-			'content'         => implode( ' ', $content_parts ),
-			'author'          => $author,
-			'email'           => $email,
+			'content'                        => implode( ' ', $content_parts ),
+			'author'                         => $author,
+			'email'                          => $email,
 			// JS-injected fields from a public form submission; there is no
 			// plugin nonce to verify at this stage (that is the optional Nonce
 			// guard's job downstream). Values are sanitized on read.

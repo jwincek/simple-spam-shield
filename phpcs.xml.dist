@@ -17,7 +17,7 @@
 
 		<!--
 			Style exclusions only. Every WordPress.Security.* sniff stays
-			enabled. The plugin deliberately targets PHP 8.1+ and uses modern
+			enabled. The plugin deliberately targets PHP 8.2+ and uses modern
 			syntax; the excluded sniffs enforce older WordPress-core formatting
 			that conflicts with that intentional style.
 		-->
@@ -28,7 +28,7 @@
 
 		<!--
 			Documentation strictness. Each file has a file-level docblock and
-			each method a summary docblock; with PHP 8.1 typed signatures the
+			each method a summary docblock; with PHP 8.2 typed signatures the
 			per-parameter @param tags and separate class docblocks are
 			redundant. These are not security sniffs.
 		-->
@@ -52,5 +52,5 @@
 	</rule>
 
 	<config name="minimum_wp_version" value="6.2"/>
-	<config name="testVersion" value="8.1-"/>
+	<config name="testVersion" value="8.2-"/>
 </ruleset>

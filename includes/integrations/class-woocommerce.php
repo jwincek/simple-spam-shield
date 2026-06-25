@@ -66,9 +66,9 @@ final class WooCommerce {
 		}
 
 		$data = [
-			'content'         => $comment->comment_content ?? '',
-			'author'          => $comment->comment_author ?? '',
-			'email'           => $comment->comment_author_email ?? '',
+			'content'                        => $comment->comment_content ?? '',
+			'author'                         => $comment->comment_author ?? '',
+			'email'                          => $comment->comment_author_email ?? '',
 			// JS-injected fields from a public form submission; there is no
 			// plugin nonce to verify at this stage (that is the optional Nonce
 			// guard's job downstream). Values are sanitized on read.

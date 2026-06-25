@@ -11,7 +11,7 @@ composer test            # all tests
 vendor/bin/phpunit --filter TokenTest   # a single test class
 ```
 
-CI runs the same suite on PHP 8.1, 8.2, and 8.3 (`.github/workflows/ci.yml`).
+CI runs the same suite on PHP 8.2, 8.3, and 8.4 (`.github/workflows/ci.yml`).
 
 ## Layout
 

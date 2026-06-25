@@ -3,7 +3,7 @@ Contributors: jeromewincek
 Tags: spam, antispam, comments, honeypot, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
-Requires PHP: 8.1
+Requires PHP: 8.2
 Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -33,7 +33,7 @@ Protection is built from a pipeline of independent **guards**. Each guard is a s
 * **Allowlist.** Trusted IPs, CIDR ranges, email addresses, and email domains bypass every guard.
 * **Logging with retention.** Blocked submissions are recorded in a dedicated table with a paginated admin viewer, and old entries are pruned automatically on a schedule you control.
 * **Privacy-aware.** The plugin registers suggested privacy-policy text describing exactly what it records.
-* **Modern, dependency-free code.** PHP 8.1+, vanilla front-end JavaScript (no jQuery), and no runtime third-party libraries.
+* **Modern, dependency-free code.** PHP 8.2+, vanilla front-end JavaScript (no jQuery), and no runtime third-party libraries.
 
 = Works with =
 

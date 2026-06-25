@@ -24,7 +24,7 @@ uninstall.php            → Clean deletion of all plugin data
 ## Requirements
 
 - WordPress 6.2+
-- PHP 8.1+
+- PHP 8.2+
 - Optional: WooCommerce (for review protection)
 - Optional: Jetpack (for contact form protection)
 
@@ -96,7 +96,7 @@ The plugin's architecture draws from two sources:
 - **Two-phase Jetpack processing** — Solves the field-stripping problem without `wp_die()` or undocumented hooks, keeping Jetpack in control of the UX.
 - **Server-signed form token** — A single HMAC-signed `<issued_at>.<signature>` token drives both the time gate (tamper-proof issue time) and the signature guard (proof the form came from this site). Because the HMAC does not expire, it is safe under full-page caching — where a WordPress nonce would go stale and block legitimate visitors.
 - **No jQuery dependency** — The front-end script uses vanilla JS with `MutationObserver` for dynamic form detection.
-- **PHP 8.1+ with strict types** — Union return types, named enums, `str_starts_with`/`str_contains`, and `match` expressions throughout.
+- **PHP 8.2+ with strict types** — Union return types (including `true`), `str_starts_with`/`str_contains`, and `match` expressions throughout.
 
 ## Linting
 
