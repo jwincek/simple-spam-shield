@@ -7,7 +7,7 @@ use Simple_Spam_Shield\Guards\Keyword_Block;
 final class KeywordBlockTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['sss_test_options'] = [
+		$GLOBALS['simple_spam_shield_test_options'] = [
 			'simple_spam_shield_blocked_keywords' => "spam\nfree money",
 		];
 	}
@@ -37,7 +37,7 @@ final class KeywordBlockTest extends TestCase {
 	}
 
 	public function test_allows_when_no_keywords_configured(): void {
-		$GLOBALS['sss_test_options']['simple_spam_shield_blocked_keywords'] = '';
+		$GLOBALS['simple_spam_shield_test_options']['simple_spam_shield_blocked_keywords'] = '';
 		$this->assertTrue( $this->guard()->check( [ 'content' => 'spam spam spam' ], 'comment' ) );
 	}
 }

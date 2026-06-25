@@ -7,7 +7,7 @@ use Simple_Spam_Shield\Core\Request;
 final class RequestTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['sss_test_options'] = [];
+		$GLOBALS['simple_spam_shield_test_options'] = [];
 		$_SERVER['REMOTE_ADDR']      = '203.0.113.5';
 		unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
 	}
@@ -18,13 +18,13 @@ final class RequestTest extends TestCase {
 	}
 
 	public function test_honors_first_forwarded_ip_only_when_proxy_is_trusted(): void {
-		$GLOBALS['sss_test_options']['simple_spam_shield_trust_proxy'] = true;
+		$GLOBALS['simple_spam_shield_test_options']['simple_spam_shield_trust_proxy'] = true;
 		$_SERVER['HTTP_X_FORWARDED_FOR']                              = '8.8.8.8, 203.0.113.5';
 		$this->assertSame( '8.8.8.8', Request::ip() );
 	}
 
 	public function test_falls_back_to_remote_addr_when_forwarded_header_is_invalid(): void {
-		$GLOBALS['sss_test_options']['simple_spam_shield_trust_proxy'] = true;
+		$GLOBALS['simple_spam_shield_test_options']['simple_spam_shield_trust_proxy'] = true;
 		$_SERVER['HTTP_X_FORWARDED_FOR']                              = 'not-an-ip';
 		$this->assertSame( '203.0.113.5', Request::ip() );
 	}

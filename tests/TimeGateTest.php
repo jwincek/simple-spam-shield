@@ -10,7 +10,7 @@ final class TimeGateTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->secret               = str_repeat( 't', 64 );
-		$GLOBALS['sss_test_options'] = [
+		$GLOBALS['simple_spam_shield_test_options'] = [
 			'simple_spam_shield_token_secret'      => $this->secret,
 			'simple_spam_shield_time_gate_seconds' => 3,
 		];

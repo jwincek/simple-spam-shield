@@ -12,51 +12,51 @@
 
 declare( strict_types=1 );
 
-define( 'SSS_PLUGIN_ROOT', dirname( __DIR__ ) );
+define( 'SIMPLE_SPAM_SHIELD_PLUGIN_ROOT', dirname( __DIR__ ) );
 
 // Satisfies the `if ( ! defined( 'ABSPATH' ) ) exit;` direct-access guards.
 if ( ! defined( 'ABSPATH' ) ) {
-	define( 'ABSPATH', SSS_PLUGIN_ROOT . '/' );
+	define( 'ABSPATH', SIMPLE_SPAM_SHIELD_PLUGIN_ROOT . '/' );
 }
 
 // --- In-memory option store ------------------------------------------------
-$GLOBALS['sss_test_options'] = [];
+$GLOBALS['simple_spam_shield_test_options'] = [];
 
 if ( ! function_exists( 'get_option' ) ) {
 	function get_option( $key, $default = false ) {
-		return $GLOBALS['sss_test_options'][ $key ] ?? $default;
+		return $GLOBALS['simple_spam_shield_test_options'][ $key ] ?? $default;
 	}
 }
 if ( ! function_exists( 'update_option' ) ) {
 	function update_option( $key, $value, $autoload = null ) {
-		$GLOBALS['sss_test_options'][ $key ] = $value;
+		$GLOBALS['simple_spam_shield_test_options'][ $key ] = $value;
 		return true;
 	}
 }
 if ( ! function_exists( 'add_option' ) ) {
 	function add_option( $key, $value = '', $deprecated = '', $autoload = 'yes' ) {
-		$GLOBALS['sss_test_options'][ $key ] = $value;
+		$GLOBALS['simple_spam_shield_test_options'][ $key ] = $value;
 		return true;
 	}
 }
 
 // --- In-memory transient store ---------------------------------------------
-$GLOBALS['sss_test_transients'] = [];
+$GLOBALS['simple_spam_shield_test_transients'] = [];
 
 if ( ! function_exists( 'get_transient' ) ) {
 	function get_transient( $key ) {
-		return $GLOBALS['sss_test_transients'][ $key ] ?? false;
+		return $GLOBALS['simple_spam_shield_test_transients'][ $key ] ?? false;
 	}
 }
 if ( ! function_exists( 'set_transient' ) ) {
 	function set_transient( $key, $value, $expiration = 0 ) {
-		$GLOBALS['sss_test_transients'][ $key ] = $value;
+		$GLOBALS['simple_spam_shield_test_transients'][ $key ] = $value;
 		return true;
 	}
 }
 if ( ! function_exists( 'delete_transient' ) ) {
 	function delete_transient( $key ) {
-		unset( $GLOBALS['sss_test_transients'][ $key ] );
+		unset( $GLOBALS['simple_spam_shield_test_transients'][ $key ] );
 		return true;
 	}
 }
@@ -67,6 +67,27 @@ if ( ! function_exists( '__' ) ) {
 		return $text;
 	}
 }
+if ( ! function_exists( 'current_user_can' ) ) {
+	function current_user_can( $capability, ...$args ) {
+		return $GLOBALS['simple_spam_shield_test_caps'][ $capability ] ?? false;
+	}
+}
+if ( ! function_exists( 'esc_html' ) ) {
+	function esc_html( $text ) {
+		return $text;
+	}
+}
+if ( ! function_exists( 'esc_html__' ) ) {
+	function esc_html__( $text, $domain = 'default' ) {
+		return $text;
+	}
+}
+if ( ! function_exists( 'wp_die' ) ) {
+	function wp_die( $message = '', $title = '', $args = [] ) {
+		// Throw instead of exiting so tests can assert the hard-block path.
+		throw new \RuntimeException( is_string( $message ) ? $message : 'wp_die' );
+	}
+}
 if ( ! function_exists( 'wp_generate_password' ) ) {
 	function wp_generate_password( $length = 12, $special_chars = true, $extra_special_chars = false ) {
 		return substr( str_repeat( 'aB3$xY7!', (int) ceil( $length / 8 ) ), 0, (int) $length );
@@ -75,6 +96,11 @@ if ( ! function_exists( 'wp_generate_password' ) ) {
 if ( ! function_exists( 'wp_unslash' ) ) {
 	function wp_unslash( $value ) {
 		return is_string( $value ) ? stripslashes( $value ) : $value;
+	}
+}
+if ( ! function_exists( 'trailingslashit' ) ) {
+	function trailingslashit( $string ) {
+		return rtrim( (string) $string, '/\\' ) . '/';
 	}
 }
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
@@ -131,7 +157,7 @@ spl_autoload_register( function ( $class ) {
 	$parts    = explode( '\\', $relative );
 	$name     = array_pop( $parts );
 	$dir      = strtolower( implode( '/', $parts ) );
-	$file     = SSS_PLUGIN_ROOT . '/includes/' . $dir . '/class-' . strtolower( str_replace( '_', '-', $name ) ) . '.php';
+	$file     = SIMPLE_SPAM_SHIELD_PLUGIN_ROOT . '/includes/' . $dir . '/class-' . strtolower( str_replace( '_', '-', $name ) ) . '.php';
 	if ( file_exists( $file ) ) {
 		require_once $file;
 	}

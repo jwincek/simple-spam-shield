@@ -14,7 +14,7 @@ final class NonceTest extends TestCase {
 
 	protected function setUp(): void {
 		$this->secret               = str_repeat( 'n', 64 );
-		$GLOBALS['sss_test_options'] = [ 'simple_spam_shield_token_secret' => $this->secret ];
+		$GLOBALS['simple_spam_shield_test_options'] = [ 'simple_spam_shield_token_secret' => $this->secret ];
 	}
 
 	private function guard(): Nonce {

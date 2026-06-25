@@ -7,7 +7,7 @@ use Simple_Spam_Shield\Guards\Behavioral;
 final class BehavioralTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['sss_test_options'] = [ 'simple_spam_shield_behavioral_threshold' => 0.6 ];
+		$GLOBALS['simple_spam_shield_test_options'] = [ 'simple_spam_shield_behavioral_threshold' => 0.6 ];
 	}
 
 	private function guard(): Behavioral {

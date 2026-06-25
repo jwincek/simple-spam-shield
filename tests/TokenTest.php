@@ -7,7 +7,7 @@ use Simple_Spam_Shield\Core\Token;
 final class TokenTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['sss_test_options'] = [
+		$GLOBALS['simple_spam_shield_test_options'] = [
 			'simple_spam_shield_token_secret' => str_repeat( 'k', 64 ),
 		];
 	}
@@ -43,10 +43,10 @@ final class TokenTest extends TestCase {
 	}
 
 	public function test_secret_is_generated_and_persisted_when_absent(): void {
-		$GLOBALS['sss_test_options'] = [];
+		$GLOBALS['simple_spam_shield_test_options'] = [];
 		$token = Token::issue();
 		// A secret should now exist and the freshly issued token verifies.
-		$this->assertArrayHasKey( 'simple_spam_shield_token_secret', $GLOBALS['sss_test_options'] );
+		$this->assertArrayHasKey( 'simple_spam_shield_token_secret', $GLOBALS['simple_spam_shield_test_options'] );
 		$this->assertIsInt( Token::verify( $token ) );
 	}
 }

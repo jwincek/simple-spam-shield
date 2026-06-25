@@ -7,7 +7,7 @@ use Simple_Spam_Shield\Guards\Link_Limit;
 final class LinkLimitTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['sss_test_options'] = [ 'simple_spam_shield_link_limit_max' => 3 ];
+		$GLOBALS['simple_spam_shield_test_options'] = [ 'simple_spam_shield_link_limit_max' => 3 ];
 	}
 
 	private function guard(): Link_Limit {
@@ -34,7 +34,7 @@ final class LinkLimitTest extends TestCase {
 	}
 
 	public function test_respects_a_configured_max_from_options(): void {
-		$GLOBALS['sss_test_options']['simple_spam_shield_link_limit_max'] = 1;
+		$GLOBALS['simple_spam_shield_test_options']['simple_spam_shield_link_limit_max'] = 1;
 		$content                                                         = 'http://a.com and http://b.com';
 		$this->assertInstanceOf( WP_Error::class, $this->guard()->check( [ 'content' => $content ], 'comment' ) );
 	}

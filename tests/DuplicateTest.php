@@ -7,8 +7,8 @@ use Simple_Spam_Shield\Guards\Duplicate;
 final class DuplicateTest extends TestCase {
 
 	protected function setUp(): void {
-		$GLOBALS['sss_test_options']    = [];
-		$GLOBALS['sss_test_transients'] = [];
+		$GLOBALS['simple_spam_shield_test_options']    = [];
+		$GLOBALS['simple_spam_shield_test_transients'] = [];
 		$_SERVER['REMOTE_ADDR']         = '198.51.100.7';
 	}
 
