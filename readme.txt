@@ -1,7 +1,7 @@
 === Simple Spam Shield ===
 Contributors: jeromewincek
 Tags: spam, antispam, comments, honeypot, woocommerce
-Requires at least: 6.2
+Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 8.2
 Stable tag: 1.1.0

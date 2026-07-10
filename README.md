@@ -4,7 +4,7 @@ Config-driven spam prevention for WordPress Comments, WooCommerce Product Review
 
 ## Architecture
 
-This plugin follows the **config-driven, layered architecture** pioneered by [vcpahumane-petstablished-sync](https://github.com/jwincek/vcpahumane-petstablished-sync), adapted for spam prevention and extended with features ported from Comment & Form Guard:
+This plugin follows a **config-driven, layered architecture**, pioneered by [shelter-pet-sync](https://github.com/jwincek/shelter-pet-sync), adapted for spam prevention and extended:
 
 ```
 config/                  → JSON definitions (guard rules, default settings)
@@ -23,7 +23,7 @@ uninstall.php            → Clean deletion of all plugin data
 
 ## Requirements
 
-- WordPress 6.2+
+- WordPress 6.9+
 - PHP 8.2+
 - Optional: WooCommerce (for review protection)
 - Optional: Jetpack (for contact form protection)
@@ -142,7 +142,7 @@ Without step 2, only the content-based guards (keyword, link limit, duplicate) a
 
 The plugin's architecture draws from two sources:
 
-- **[vcpahumane-petstablished-sync](https://github.com/jwincek/vcpahumane-petstablished-sync)** — The config-driven, layered structure: `config/` JSON definitions, `includes/core/` infrastructure, namespaced autoloader, activation/deactivation hooks, and the guard-as-ability pattern.
+- **[shelter-pet-sync](https://github.com/jwincek/shelter-pet-sync)** — The config-driven, layered structure: `config/` JSON definitions, `includes/core/` infrastructure, namespaced autoloader, activation/deactivation hooks, and the guard-as-ability pattern.
 
 - **Comment & Form Guard** — Five features were ported and adapted: duplicate submission detection (transient-based hashing), behavioral analysis (mouse/click/time scoring), the allowlist system (IP, CIDR, email, domain matching with proxy-aware IP detection), database-backed logging with `WP_List_Table`, and `uninstall.php` for clean plugin deletion.
 
