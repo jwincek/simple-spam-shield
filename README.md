@@ -13,7 +13,7 @@ includes/guards/         → Individual spam checks (analogous to "abilities")
 includes/integrations/   → Thin hooks into WP Comments, WooCommerce, Jetpack
 admin/                   → WP_List_Table for the spam logs admin page
 assets/css/              → Honeypot field styling
-assets/js/               → Front-end guard injection + behavioral tracking
+assets/js/               → Front-end guard injection + behavioral signals
 uninstall.php            → Clean deletion of all plugin data
 ```
 
