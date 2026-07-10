@@ -4,7 +4,7 @@ Config-driven spam prevention for WordPress Comments, WooCommerce Product Review
 
 ## Architecture
 
-This plugin follows the **config-driven, layered architecture** pioneered by [vcpahumane-petstablished-sync](https://github.com/jwincek/vcpahumane-petstablished-sync), adapted for spam prevention and extended with features ported from [Comment & Form Guard](https://github.com/):
+This plugin follows the **config-driven, layered architecture** pioneered by [vcpahumane-petstablished-sync](https://github.com/jwincek/vcpahumane-petstablished-sync), adapted for spam prevention and extended with features ported from Comment & Form Guard:
 
 ```
 config/                  → JSON definitions (guard rules, default settings)
@@ -71,15 +71,19 @@ This design gives full guard coverage on Jetpack forms while Jetpack stays in co
 
 ### Allowlist
 
-Submissions from allowlisted IPs or emails bypass all guards entirely. The allowlist supports exact IPs, CIDR ranges (e.g. `10.0.0.0/8`), exact email addresses, and email domain patterns (e.g. `@trusted.org`). IP detection is proxy-aware, checking `HTTP_CLIENT_IP` and `HTTP_X_FORWARDED_FOR` headers before falling back to `REMOTE_ADDR`.
+Submissions from allowlisted IPs or emails bypass all guards entirely. The allowlist supports exact IPs, CIDR ranges (e.g. `10.0.0.0/8`), exact email addresses, and email domain patterns (e.g. `@trusted.org`). IP detection uses the direct connection IP (`REMOTE_ADDR`) by default; the spoofable `X-Forwarded-For` header is honored only when the **Trust proxy headers** option is enabled (for sites behind a trusted reverse proxy), so a visitor cannot forge a header to spoof an allowlisted IP.
 
 ### Logging
 
-Blocked submissions are logged to a custom database table (`wp_simple_spam_shield_spam_logs`) with guard name, context, reason, content excerpt, IP, and user agent. The **Spam Shield → Spam Logs** admin page provides a paginated, sortable `WP_List_Table` with individual and bulk delete actions. Logging can be disabled from the settings page.
+Blocked submissions are logged to a custom database table (`wp_simple_spam_shield_spam_logs`) with guard name, context, reason, content excerpt, IP, and user agent. The **Spam Shield → Spam Logs** admin page provides a paginated, sortable `WP_List_Table` that can be filtered by guard and by context, shows a user-agent column, and offers individual and bulk delete. A cached 7-day summary ("blocked / most active guard") sits above the list. Logging can be disabled from the settings page, and a configurable retention window (default 30 days) prunes old rows daily via WP-Cron.
+
+### Settings
+
+Settings live under **Spam Shield → Settings**, organized into tabs — General, Guards, Allowlist, and Logging — rendered as a single form so one Save persists everything. It degrades gracefully: without JavaScript the tab bar is hidden and every section is shown.
 
 ### Clean uninstall
 
-When the plugin is deleted (not just deactivated), `uninstall.php` drops the custom database table, removes all `simple_spam_shield_*` options, and purges duplicate-detection transients.
+When the plugin is deleted (not just deactivated), `uninstall.php` drops the custom table, removes all `simple_spam_shield_*` options, clears the scheduled purge, and purges transients — on **every site of a multisite network**. This is gated by the **Delete all plugin data when this plugin is deleted** setting (on by default), so you can keep your settings and logs across a reinstall.
 
 ## Protecting another plugin's forms
 
@@ -140,7 +144,7 @@ The plugin's architecture draws from two sources:
 
 - **[vcpahumane-petstablished-sync](https://github.com/jwincek/vcpahumane-petstablished-sync)** — The config-driven, layered structure: `config/` JSON definitions, `includes/core/` infrastructure, namespaced autoloader, activation/deactivation hooks, and the guard-as-ability pattern.
 
-- **[Comment & Form Guard](https://github.com/)** — Five features were ported and adapted: duplicate submission detection (transient-based hashing), behavioral analysis (mouse/click/time scoring), the allowlist system (IP, CIDR, email, domain matching with proxy-aware IP detection), database-backed logging with `WP_List_Table`, and `uninstall.php` for clean plugin deletion.
+- **Comment & Form Guard** — Five features were ported and adapted: duplicate submission detection (transient-based hashing), behavioral analysis (mouse/click/time scoring), the allowlist system (IP, CIDR, email, domain matching with proxy-aware IP detection), database-backed logging with `WP_List_Table`, and `uninstall.php` for clean plugin deletion.
 
 ### Improvements over both
 
