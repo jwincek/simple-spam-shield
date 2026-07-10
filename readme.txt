@@ -4,7 +4,7 @@ Tags: spam, antispam, comments, honeypot, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -88,6 +88,9 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 
 == Changelog ==
 
+= 1.0.2 =
+* Uninstall now removes the plugin's table, options, transients, and scheduled task on every site of a multisite network, not just the main site.
+
 = 1.0.1 =
 * simple_spam_shield_check() accepts the hidden honeypot/token/behavioral fields explicitly, so REST/AJAX endpoints (JSON body, empty $_POST) can pass them from the request.
 * The time-gate and signature guards skip rather than block when no token is supplied for a custom context, so content-only integrations are not falsely rejected. Built-in comment and review forms still require the token.
@@ -104,6 +107,9 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 * Developed by Jerome Wincek, with engineering assistance from Anthropic's Claude.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+Multisite: uninstall now cleans up every site on the network.
 
 = 1.0.1 =
 Adds explicit-field support to the integration API for REST/JSON forms and prevents false rejections for content-only integrations.

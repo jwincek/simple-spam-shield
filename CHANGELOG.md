@@ -10,6 +10,13 @@ The user-facing changelog shipped to WordPress.org lives in the
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-06-25
+
+### Fixed
+- Uninstall now removes the plugin's table, options, transients, and scheduled
+  task on **every site of a multisite network**, rather than only the site the
+  plugin was deleted from.
+
 ## [1.0.1] - 2026-06-25
 
 ### Changed
@@ -55,6 +62,7 @@ Initial release.
   their own forms: `simple_spam_shield_check()`,
   `simple_spam_shield_protect_selector()`, and `simple_spam_shield_field_markup()`.
 
-[Unreleased]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/jwincek/simple-spam-shield/releases/tag/v1.0.0
