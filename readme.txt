@@ -4,7 +4,7 @@ Tags: spam, antispam, comments, honeypot, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.0.2
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -78,7 +78,7 @@ Yes. The timing and authenticity checks use a token whose signature does not exp
 
 = Does removing the plugin clean up after itself? =
 
-Yes. Deleting the plugin (not just deactivating it) drops its database table, removes all of its options, clears its scheduled task, and purges its transients.
+By default, yes — deleting the plugin (not just deactivating it) drops its database table, removes all of its options, clears its scheduled task, and purges its transients, on every site of a multisite network. If you would rather keep your settings and logs (for example, before reinstalling), turn off **Delete all plugin data when this plugin is deleted** under **Spam Shield → Settings → Logging** first.
 
 == Screenshots ==
 
@@ -88,7 +88,9 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 
 == Changelog ==
 
-= 1.0.2 =
+= 1.1.0 =
+* Settings are now organized into tabs (General, Guards, Allowlist, Logging) to reduce scrolling.
+* New setting to control whether all plugin data is removed when the plugin is deleted (on by default).
 * Uninstall now removes the plugin's table, options, transients, and scheduled task on every site of a multisite network, not just the main site.
 
 = 1.0.1 =
@@ -108,8 +110,8 @@ Yes. Deleting the plugin (not just deactivating it) drops its database table, re
 
 == Upgrade Notice ==
 
-= 1.0.2 =
-Multisite: uninstall now cleans up every site on the network.
+= 1.1.0 =
+Tabbed settings, an option to keep your data on uninstall, and multisite-wide cleanup.
 
 = 1.0.1 =
 Adds explicit-field support to the integration API for REST/JSON forms and prevents false rejections for content-only integrations.

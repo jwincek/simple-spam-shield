@@ -19,6 +19,7 @@
 		"allowlist": "",
 		"trust_proxy": false,
 		"log_blocked": true,
-		"log_retention_days": 30
+		"log_retention_days": 30,
+		"delete_data_on_uninstall": true
 	}
 }

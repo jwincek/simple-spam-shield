@@ -10,7 +10,14 @@ The user-facing changelog shipped to WordPress.org lives in the
 
 ## [Unreleased]
 
-## [1.0.2] - 2026-06-25
+## [1.1.0] - 2026-06-25
+
+### Added
+- Settings are grouped into tabs (General, Guards, Allowlist, Logging) to cut
+  down on scrolling. Progressive enhancement: without JavaScript every section
+  is shown, so nothing becomes unreachable.
+- New "Delete all plugin data when this plugin is deleted" setting (on by
+  default) so you can keep your settings and logs across a reinstall.
 
 ### Fixed
 - Uninstall now removes the plugin's table, options, transients, and scheduled
@@ -62,7 +69,7 @@ Initial release.
   their own forms: `simple_spam_shield_check()`,
   `simple_spam_shield_protect_selector()`, and `simple_spam_shield_field_markup()`.
 
-[Unreleased]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.2...HEAD
-[1.0.2]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.1...v1.0.2
+[Unreleased]: https://github.com/jwincek/simple-spam-shield/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/jwincek/simple-spam-shield/releases/tag/v1.0.0

@@ -20,6 +20,12 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 function simple_spam_shield_uninstall_site(): void {
 	global $wpdb;
 
+	// Respect the opt-out: leave all data in place unless deletion is enabled
+	// (default on, matching the plugin's documented clean-uninstall behavior).
+	if ( ! (bool) get_option( 'simple_spam_shield_delete_data_on_uninstall', true ) ) {
+		return;
+	}
+
 	// 1. Drop the custom spam logs database table.
 	$table = $wpdb->prefix . 'simple_spam_shield_spam_logs';
 	$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table identifier cannot be a prepared placeholder; value is the plugin's own prefixed table name.
@@ -44,6 +50,7 @@ function simple_spam_shield_uninstall_site(): void {
 		'simple_spam_shield_behavioral_threshold',
 		'simple_spam_shield_log_blocked',
 		'simple_spam_shield_log_retention_days',
+		'simple_spam_shield_delete_data_on_uninstall',
 		'simple_spam_shield_block_log',
 		'simple_spam_shield_allowlist',
 		'simple_spam_shield_trust_proxy',
