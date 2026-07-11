@@ -72,6 +72,10 @@ By default the plugin uses the direct connection IP, because forwarded headers c
 
 By default a blocked comment or review is placed in the **spam queue** (Comments → Spam) rather than being rejected outright, so you can restore a false positive with one click — nothing is lost. Open **Spam Shield → Spam Logs** to see which guard blocked it and why, then loosen that guard on the settings page — for example, raise the link limit, lower the behavioral threshold, or add the sender to the allowlist. If you would rather reject blocked comments with an error message, enable that option under **Spam Shield → Settings → General**.
 
+= Does it replace WordPress's built-in comment moderation? =
+
+No — it complements it. Simple Spam Shield's guards run *before* WordPress's own comment checks, and those built-ins still run underneath: the duplicate-comment check, the comment flood throttle, the **Disallowed Comment Keys** blocklist, and the "hold a comment with this many links" setting (all under **Settings → Discussion**). Its Keyword, Link limit, and Duplicate guards overlap those, so you can rely on either or both. What it adds on top is the honeypot, timing, signature, and behavioral checks core has no equivalent for, one settings screen with logging, and protection for WooCommerce reviews and Jetpack contact forms — not just comments.
+
 = Does it work with caching plugins? =
 
 Yes. The timing and authenticity checks use a token whose signature does not expire (unlike a WordPress nonce, which would go stale on a cached page and block legitimate visitors), so full-page caching does not produce false positives.
