@@ -7,7 +7,7 @@ local setup, the quality gates, and how to extend the guard pipeline.
 
 - PHP 8.2+
 - [Composer](https://getcomposer.org/)
-- WordPress 6.9+ (only needed to run the plugin or Plugin Check, not for unit tests)
+- WordPress 6.2+ (only needed to run the plugin or Plugin Check, not for unit tests)
 
 ## Setup
 

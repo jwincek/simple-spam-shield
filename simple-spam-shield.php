@@ -3,7 +3,7 @@
  * Plugin Name: Simple Spam Shield
  * Description: Config-driven spam prevention for Comments, WooCommerce Reviews, and Jetpack Contact Form blocks — no external services required.
  * Version:     1.1.0
- * Requires at least: 6.9
+ * Requires at least: 6.2
  * Requires PHP: 8.2
  * Author:      Jerome Wincek
  * Text Domain: simple-spam-shield
