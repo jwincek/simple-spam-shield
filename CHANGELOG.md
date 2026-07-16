@@ -10,6 +10,23 @@ The user-facing changelog shipped to WordPress.org lives in the
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-07-12
+
+### Fixed
+- Jetpack contact form submissions could be flagged as spam on their own
+  metadata. Jetpack passes the `jetpack_contact_form_is_spam` filter the array
+  from `prepare_for_akismet()`, which carries the visitor's input *alongside*
+  site/server metadata — `blog` (home URL), `referrer`, `permalink`,
+  `REQUEST_URI`, and every `HTTP_*` header. `normalize()` concatenated every
+  string value into the inspected content, so four URLs the visitor never typed
+  could exceed a link limit of three, and keywords could match the user-agent
+  string. It now allow-lists only the visitor's own input: `comment_content`,
+  `comment_author_url`, and each `contact_form_field_*` value.
+- The sender's name and email were read from `name`/`email` keys that Jetpack
+  never sets; they come from `comment_author` / `comment_author_email`. They
+  were therefore always empty, so the keyword guard never searched them and the
+  duplicate guard's hash was weaker.
+
 ## [1.1.0] - 2026-06-25
 
 ### Added
@@ -69,7 +86,8 @@ Initial release.
   their own forms: `simple_spam_shield_check()`,
   `simple_spam_shield_protect_selector()`, and `simple_spam_shield_field_markup()`.
 
-[Unreleased]: https://github.com/jwincek/simple-spam-shield/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/jwincek/simple-spam-shield/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/jwincek/simple-spam-shield/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/jwincek/simple-spam-shield/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/jwincek/simple-spam-shield/releases/tag/v1.0.0

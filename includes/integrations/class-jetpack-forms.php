@@ -57,36 +57,41 @@ final class Jetpack_Forms {
 	}
 
 	/**
-	 * Normalize Jetpack form data for the guard pipeline.
+	 * Normalize Jetpack's Akismet-shaped values for the guard pipeline.
 	 *
-	 * Jetpack form fields are dynamic, so we combine all text values
-	 * into a single 'content' string and extract name/email if present.
+	 * Jetpack hands the filter prepare_for_akismet()'s array, which carries the
+	 * visitor's submission *alongside* site and server metadata: the blog home
+	 * URL, the referrer, the entry permalink, REQUEST_URI, and every HTTP_*
+	 * header. Only the visitor's own input may be inspected — concatenating
+	 * every string value made the link and keyword guards match Jetpack's own
+	 * URLs and the user-agent string, which flagged legitimate submissions.
+	 *
+	 * The visitor's input lives in `comment_content` (which Jetpack sets to
+	 * null when empty), `comment_author_url`, and one `contact_form_field_*`
+	 * entry per submitted field, so allow-list exactly those.
+	 *
+	 * @param array $form_data Jetpack's Akismet values array.
+	 * @return array Normalized data for the guard pipeline.
 	 */
 	private static function normalize( array $form_data ): array {
 		$content_parts = [];
-		$author        = '';
-		$email         = '';
 
 		foreach ( $form_data as $key => $value ) {
-			if ( ! is_string( $value ) ) {
+			if ( ! is_string( $value ) || '' === $value ) {
 				continue;
 			}
 
-			$lower_key = strtolower( $key );
-
-			if ( in_array( $lower_key, [ 'name', 'author', 'your-name', 'contact-name' ], true ) ) {
-				$author = $value;
-			} elseif ( in_array( $lower_key, [ 'email', 'your-email', 'contact-email' ], true ) ) {
-				$email = $value;
+			if ( 'comment_content' === $key
+				|| 'comment_author_url' === $key
+				|| str_starts_with( $key, 'contact_form_field_' ) ) {
+				$content_parts[] = $value;
 			}
-
-			$content_parts[] = $value;
 		}
 
 		return [
 			'content'                            => implode( ' ', $content_parts ),
-			'author'                             => $author,
-			'email'                              => $email,
+			'author'                             => self::string_value( $form_data, 'comment_author' ),
+			'email'                              => self::string_value( $form_data, 'comment_author_email' ),
 			// JS-injected fields from a public form submission; there is no
 			// plugin nonce to verify at this stage (that is the optional Nonce
 			// guard's job downstream). Values are sanitized on read.
@@ -96,5 +101,16 @@ final class Jetpack_Forms {
 			'simple_spam_shield_behavioral_data' => sanitize_textarea_field( wp_unslash( $_POST['simple_spam_shield_behavioral_data'] ?? '' ) ),
 			// phpcs:enable WordPress.Security.NonceVerification.Missing
 		];
+	}
+
+	/**
+	 * Read a string value from the form data, defaulting to an empty string.
+	 *
+	 * @param array  $form_data Jetpack's Akismet values array.
+	 * @param string $key       Key to read.
+	 * @return string
+	 */
+	private static function string_value( array $form_data, string $key ): string {
+		return isset( $form_data[ $key ] ) && is_string( $form_data[ $key ] ) ? $form_data[ $key ] : '';
 	}
 }

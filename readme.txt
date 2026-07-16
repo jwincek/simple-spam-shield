@@ -4,7 +4,7 @@ Tags: spam, antispam, comments, honeypot, woocommerce
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,10 @@ By default, yes — deleting the plugin (not just deactivating it) drops its dat
 
 == Changelog ==
 
+= 1.1.1 =
+* Fixed: Jetpack contact form submissions could be wrongly flagged. The plugin inspected everything Jetpack passes its spam filter, which includes site and server metadata — the site address, the referrer, the page permalink, and request headers. Those count as links and text, so a legitimate submission containing no links of its own could still exceed the link limit, and keywords could match against the browser's user-agent string. Only what the visitor actually submitted is inspected now.
+* Fixed: the sender's name and email were not read from Jetpack submissions, so the keyword guard never checked them and duplicate detection was less accurate.
+
 = 1.1.0 =
 * Settings are now organized into tabs (General, Guards, Allowlist, Logging) to reduce scrolling.
 * New setting to control whether all plugin data is removed when the plugin is deleted (on by default).
@@ -114,6 +118,9 @@ By default, yes — deleting the plugin (not just deactivating it) drops its dat
 * Developed by Jerome Wincek, with engineering assistance from Anthropic's Claude.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Fixes legitimate Jetpack contact form submissions being wrongly flagged as spam. Recommended for anyone protecting Jetpack forms.
 
 = 1.1.0 =
 Tabbed settings, an option to keep your data on uninstall, and multisite-wide cleanup.
